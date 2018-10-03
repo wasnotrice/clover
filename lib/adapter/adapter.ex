@@ -14,6 +14,10 @@ defmodule Hugh.Adapter do
         Hugh.Adapter.start_link(__MODULE__, opts, name: name)
       end
 
+      def send(pid, message) do
+        GenServer.cast(pid, {:send, message})
+      end
+
       defp process_name(opts) do
         String.to_atom("#{Keyword.fetch!(opts, :name)}.#{process_suffix()}")
       end
@@ -32,11 +36,11 @@ defmodule Hugh.Adapter do
         robot = Hugh.Robot.Supervisor.find_robot(pid)
         {:noreply, %{state | robot: robot}}
       end
-
-      def handle_info(_msg, state) do
-        {:noreply, state}
-      end
     end
+  end
+
+  def send(adapter, message) do
+    GenServer.cast(adapter, {:send, message})
   end
 
   def start_link(mod, arg, opts) do

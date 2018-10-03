@@ -38,9 +38,22 @@ defmodule Hugh.Robot do
         {:next_state, :initialized, %{data | adapter: adapter}}
       end
 
-      def handle_event(_type, _event, _state, _data) do
-        :keep_state_and_data
+      def handle_event(:cast, {:incoming, message}, state, data) do
+        IO.inspect(message, label: "robot in")
       end
+
+      # def handle_event(type, event, state, data) do
+      #   IO.inspect(%{type: type, event: event}, label: "robot received")
+      #   :keep_state_and_data
+      # end
     end
+  end
+
+  def send(robot, message) do
+    GenStateMachine.cast(robot, {:send, message})
+  end
+
+  def handle_in(robot, message) do
+    GenStateMachine.cast(robot, {:incoming, message})
   end
 end
