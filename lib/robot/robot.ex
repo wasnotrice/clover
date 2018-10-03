@@ -8,19 +8,23 @@ defmodule Hugh.Robot do
   @type action :: GenStateMachine.action()
   @type actions :: [action]
 
-  defmacro __using__(_args) do
+  defmacro __using__(opts \\ []) do
     quote do
-      use GenStateMachine, callback_mode: [:handle_event_function, :state_enter]
+      use GenStateMachine,
+        callback_mode:
+          unquote(Keyword.get(opts, :callback_mode, [:handle_event_function, :state_enter]))
 
-      def init(args) do
-        {:ok, Keyword.get(args, :state, :disconnected), Keyword.get(args, :data, %{})}
+      def init(opts) do
+        state = Keyword.get(opts, :state, :disconnected)
+        data = Keyword.get(opts, :data, %{})
+        {:ok, state, data}
       end
 
       defoverridable init: 1
 
-      def start_link(args) do
-        opts = [name: Keyword.get(args, :name, __MODULE__)]
-        GenStateMachine.start_link(__MODULE__, args, opts)
+      def start_link(opts) do
+        name = Keyword.fetch!(opts, :name)
+        GenStateMachine.start_link(__MODULE__, opts, name: name)
       end
     end
   end

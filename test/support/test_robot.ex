@@ -1,4 +1,4 @@
-defmodule Hugh.Robot.TestRobot do
+defmodule Hugh.Test.TestRobot do
   use Hugh.Robot
 
   def handle_event(:enter, :disconnected, :disconnected, _data) do

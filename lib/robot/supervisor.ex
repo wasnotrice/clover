@@ -10,14 +10,16 @@ defmodule Hugh.Robot.Supervisor do
 
   @impl true
   def init(opts) do
-    {robot, robot_opts} = Keyword.pop(opts, :robot)
+    robot = Keyword.fetch!(opts, :robot)
+    adapter = Keyword.fetch!(opts, :adapter)
 
-    if is_nil(robot) do
-      raise "Missing :robot, got: #{inspect(opts)}"
-    end
+    robot_opts =
+      Keyword.drop(opts, [:robot, :adapter])
+      |> Keyword.put_new(:name, robot)
 
     children = [
-      {robot, robot_opts}
+      {robot, robot_opts},
+      {adapter, robot_opts}
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
