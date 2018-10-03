@@ -15,9 +15,15 @@ defmodule Hugh.Robot do
           unquote(Keyword.get(opts, :callback_mode, [:handle_event_function, :state_enter]))
 
       def init(opts) do
-        state = Keyword.get(opts, :state, :disconnected)
-        data = Keyword.get(opts, :data, %{})
-        {:ok, state, data}
+        supervisor = Keyword.fetch!(opts, :supervisor)
+        state = Keyword.get(opts, :state, :uninitialized)
+
+        data =
+          %{supervisor: supervisor, adapter: nil}
+          |> Map.merge(Keyword.get(opts, :data, []) |> Enum.into(%{}))
+
+        actions = [{:next_event, :internal, :after_init}]
+        {:ok, state, data, actions}
       end
 
       defoverridable init: 1
@@ -25,6 +31,15 @@ defmodule Hugh.Robot do
       def start_link(opts) do
         name = Keyword.fetch!(opts, :name)
         GenStateMachine.start_link(__MODULE__, opts, name: name)
+      end
+
+      def handle_event(:internal, :after_init, _state, %{supervisor: pid} = data) do
+        adapter = Hugh.Robot.Supervisor.find_adapter(pid)
+        {:next_state, :initialized, %{data | adapter: adapter}}
+      end
+
+      def handle_event(_type, _event, _state, _data) do
+        :keep_state_and_data
       end
     end
   end

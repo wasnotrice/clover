@@ -9,6 +9,9 @@ defmodule HughTest do
     assert Process.alive?(supervisor)
     assert robot = Process.whereis(Hugh.Test.TestRobot)
     assert Process.alive?(robot)
+    assert ^robot = Hugh.Robot.Supervisor.find_robot(supervisor)
+    assert adapter = Hugh.Robot.Supervisor.find_adapter(supervisor)
+    assert Process.alive?(adapter)
   end
 
   test "starting a robot with a name" do

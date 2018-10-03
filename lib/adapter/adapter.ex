@@ -4,7 +4,9 @@ defmodule Hugh.Adapter do
       use GenServer
 
       def init(opts) do
-        {:ok, %{}}
+        supervisor = Keyword.fetch!(opts, :supervisor)
+        send(self(), :after_init)
+        {:ok, %{robot: nil, supervisor: supervisor}}
       end
 
       def start_link(opts) do
@@ -25,6 +27,15 @@ defmodule Hugh.Adapter do
       def process_suffix, do: "Adapter"
 
       defoverridable process_suffix: 0
+
+      def handle_info(:after_init, %{supervisor: pid} = state) do
+        robot = Hugh.Robot.Supervisor.find_robot(pid)
+        {:noreply, %{state | robot: robot}}
+      end
+
+      def handle_info(_msg, state) do
+        {:noreply, state}
+      end
     end
   end
 
