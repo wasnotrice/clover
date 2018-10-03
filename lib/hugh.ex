@@ -12,4 +12,8 @@ defmodule Hugh do
   def start_robot(mod, opts \\ []) do
     Hugh.RobotSupervisor.start_child(mod, opts)
   end
+
+  def format_error(reason) do
+    reason
+  end
 end
