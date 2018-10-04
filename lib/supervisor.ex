@@ -8,7 +8,7 @@ defmodule Hugh.Supervisor do
 
   def init(_opts) do
     children = [
-      {Hugh.RobotSupervisor, name: Hugh.App}
+      Hugh.RobotSupervisor
     ]
 
     Supervisor.init(children, strategy: :one_for_one)

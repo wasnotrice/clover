@@ -3,11 +3,24 @@ defmodule Hugh.Test.TestAdapter do
 
   alias Hugh.Robot
 
+  def start_link(arg, opts \\ []) do
+    arg = Keyword.put_new(arg, :sink, self())
+    Hugh.Adapter.start_link(__MODULE__, arg, opts)
+  end
+
+  def init(arg) do
+    {:ok, %{sink: Keyword.fetch!(arg, :sink)}}
+  end
+
   def process_suffix, do: "TestAdapter"
 
-  def handle_cast({:send, message}, %{robot: robot} = state) do
-    Kernel.send(robot, {:message, message})
+  def handle_in({:message, message}, %{robot: robot} = state) do
+    Kernel.send(robot, {:in, message})
     {:noreply, state}
+  end
+
+  def handle_out({:send, message}, %{sink: sink} = state) do
+    Kernel.send(sink, {:out, message})
   end
 
   def handle_info({:incoming, message}, %{robot: robot} = state) do

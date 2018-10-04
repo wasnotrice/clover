@@ -14,9 +14,4 @@ defmodule Hugh.RobotSupervisor do
   def init(_arg) do
     DynamicSupervisor.init(strategy: :one_for_one)
   end
-
-  def start_child(mod, opts) do
-    child_spec = {Hugh.Robot.Supervisor, Keyword.put(opts, :robot, mod)}
-    DynamicSupervisor.start_child(@name, child_spec)
-  end
 end
