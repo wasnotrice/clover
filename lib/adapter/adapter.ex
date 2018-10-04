@@ -4,18 +4,15 @@ defmodule Hugh.Adapter do
       use GenServer
 
       def init(opts) do
-        supervisor = Keyword.fetch!(opts, :supervisor)
+        robot = Hugh.Robot.Glue.module_and_pid(opts, :adapter)
+        glue = Hugh.Robot.Glue.module_and_pid(opts, :glue)
         send(self(), :after_init)
-        {:ok, %{robot: nil, supervisor: supervisor}}
+        {:ok, %{robot: robot, glue: glue}}
       end
 
       def start_link(opts) do
         name = process_name(opts)
         Hugh.Adapter.start_link(__MODULE__, opts, name: name)
-      end
-
-      def send(pid, message) do
-        GenServer.cast(pid, {:send, message})
       end
 
       defp process_name(opts) do
@@ -32,15 +29,15 @@ defmodule Hugh.Adapter do
 
       defoverridable process_suffix: 0
 
-      def handle_info(:after_init, %{supervisor: pid} = state) do
-        robot = Hugh.Robot.Supervisor.find_robot(pid)
+      def send(adapter, message) do
+        GenServer.cast(adapter, {:send, message})
+      end
+
+      def handle_info(:after_init, %{glue: {glue, pid}} = state) do
+        robot = glue.whereis_robot(pid)
         {:noreply, %{state | robot: robot}}
       end
     end
-  end
-
-  def send(adapter, message) do
-    GenServer.cast(adapter, {:send, message})
   end
 
   def start_link(mod, arg, opts) do

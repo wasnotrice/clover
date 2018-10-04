@@ -4,6 +4,10 @@ defmodule Hugh.Robot.Supervisor do
   """
   use Supervisor
 
+  @behaviour Hugh.Robot.Glue
+
+  alias Hugh.Robot.Glue
+
   @robot_id :robot
   @adapter_id :adapter
 
@@ -13,24 +17,29 @@ defmodule Hugh.Robot.Supervisor do
 
   @impl true
   def init(opts) do
-    robot = Keyword.fetch!(opts, :robot)
-    adapter = Keyword.fetch!(opts, :adapter)
+    {robot_mod, _} = Glue.module_and_pid(opts, :robot)
+    {adapter_mod, _} = Glue.module_and_pid(opts, :adapter)
 
     robot_opts =
-      Keyword.drop(opts, [:robot, :adapter])
-      |> Keyword.put_new(:name, robot)
-      |> Keyword.put(:supervisor, self())
+      opts
+      |> Keyword.put_new(:name, robot_mod)
+      |> Keyword.put(:glue, {__MODULE__, self()})
 
     children = [
-      Supervisor.child_spec({robot, robot_opts}, id: @robot_id),
-      Supervisor.child_spec({adapter, robot_opts}, id: @adapter_id)
+      Supervisor.child_spec({robot_mod, robot_opts}, id: @robot_id),
+      Supervisor.child_spec({adapter_mod, robot_opts}, id: @adapter_id)
     ]
 
     Supervisor.init(children, strategy: :one_for_one)
   end
 
-  def find_adapter(supervisor), do: find_child(supervisor, @adapter_id)
-  def find_robot(supervisor), do: find_child(supervisor, @robot_id)
+  @impl true
+  @spec whereis_adapter(atom() | pid() | {atom(), any()} | {:via, atom(), any()}) :: pid() | nil
+  def whereis_adapter(supervisor), do: find_child(supervisor, @adapter_id)
+
+  @impl true
+  @spec whereis_robot(atom() | pid() | {atom(), any()} | {:via, atom(), any()}) :: pid() | nil
+  def whereis_robot(supervisor), do: find_child(supervisor, @robot_id)
 
   defp find_child(supervisor, id) do
     supervisor

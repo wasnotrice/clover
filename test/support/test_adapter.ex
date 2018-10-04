@@ -5,22 +5,8 @@ defmodule Hugh.Test.TestAdapter do
 
   def process_suffix, do: "TestAdapter"
 
-  @doc """
-  Add an additional message receiver.
-
-  Useful for receiving messages in tests
-  """
-  def add_receiver(pid, receiver) do
-    GenServer.cast(pid, {:add_receiver, receiver})
-  end
-
-  def handle_cast({:add_receiver, receiver}, state) do
-    receivers = Map.get(state, :receivers, [])
-    {:noreply, Map.put(state, :receivers, [receiver | receivers])}
-  end
-
-  def handle_cast({:send, message}, state) do
-    handle_outgoing({:send, message}, state)
+  def handle_cast({:send, message}, %{robot: robot} = state) do
+    Kernel.send(robot, {:message, message})
     {:noreply, state}
   end
 
@@ -31,7 +17,7 @@ defmodule Hugh.Test.TestAdapter do
   end
 
   def handle_info(message, state) do
-    IO.inspect(message, label: "adapter unhandled")
+    # IO.inspect(message, label: "adapter unhandled")
     {:noreply, state}
   end
 
