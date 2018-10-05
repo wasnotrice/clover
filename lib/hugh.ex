@@ -9,22 +9,32 @@ defmodule Hugh do
     Hugh.Supervisor.start_link(name: Hugh.App)
   end
 
-  def start_supervised_robot(mod, opts \\ []) do
-    adapter = Keyword.fetch!(opts, :adapter)
-
-    start_opts = Keyword.take(opts, [:name, :timeout, :debug, :spawn_opt])
-
-    {:ok, sup} = Supervisor.start_link(Hugh.Robot.Supervisor, [], [])
-    {:ok, robot} = Supervisor.start_child(sup, mod.child_spec(opts, start_opts))
-    {:ok, adapter} = Supervisor.start_child(sup, adapter.child_spec(opts, start_opts))
-
-    :ok = Hugh.Robot.connect(robot, to: adapter)
-
-    {:ok, robot, sup}
+  def start_supervised_robot(mod, adapter) do
+    start_supervised_robot(mod, adapter, [])
   end
 
-  def stop_supervised_robot(sup, _opts \\ []) do
-    Process.exit(sup, :normal)
+  def start_supervised_robot(mod, adapter, opts) when is_atom(adapter) do
+    start_supervised_robot(mod, {adapter, []}, opts)
+  end
+
+  def start_supervised_robot(mod, {adapter, adapter_opts}, opts) do
+    start_opts = Keyword.take(opts, [:name, :timeout, :debug, :spawn_opt])
+    adapter_opts = Keyword.put(adapter_opts, :robot_name, Keyword.get(start_opts, :name))
+
+    DynamicSupervisor.start_child(
+      robot_supervisor(),
+      mod.child_spec({adapter, adapter_opts}, start_opts)
+    )
+  end
+
+  def stop_supervised_robot(sup, reason \\ :kill) do
+    Process.exit(sup, reason)
+  end
+
+  def robot_supervisor, do: Hugh.Robots
+
+  def format_error({:not_exported, {mod, function}}) do
+    "#{mod} does not export function #{function}"
   end
 
   def format_error(reason) do

@@ -5,18 +5,14 @@ defmodule Hugh.RobotTest do
   alias Hugh.{Adapter, Robot}
 
   setup do
-    {:ok, robot} = TestRobot.start_link([], name: :Doug)
-    {:ok, adapter} = TestAdapter.start_link([])
-    Hugh.Robot.connect(robot, to: adapter)
-    Hugh.Adapter.connect(adapter, to: self())
-
+    robot = start_supervised!(TestRobot.child_spec({TestAdapter, sink: self()}, name: Doug))
+    adapter = Robot.get_adapter(robot)
     {:ok, robot: robot, adapter: adapter}
   end
 
-  @tag :focus
-  test "adapter sends message", %{adapter: adapter} do
-    Adapter.incoming(adapter, "hello")
-    assert_receive({:in, "hello"})
+  test "robot responds to message", %{adapter: adapter} do
+    Adapter.incoming(adapter, "ping")
+    assert_receive({:out, "pong"})
   end
 
   test "robot sends message", %{robot: robot} do

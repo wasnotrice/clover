@@ -4,24 +4,31 @@ defmodule HughTest do
 
   alias Hugh.Test.{TestAdapter, TestRobot}
 
-  describe "starting a robot" do
+  describe "a supervised robot" do
     setup :start_supervised_robot
 
-    test "starting a robot", %{robot: robot} do
+    test "starts", %{robot: robot} do
       assert Process.alive?(robot)
       Hugh.Robot.send(robot, "hello")
       assert_receive {:out, "hello"}
     end
+
+    test "stops", %{robot: robot, supervisor: supervisor} do
+      assert Process.alive?(robot)
+      assert Process.alive?(supervisor)
+      Hugh.stop_supervised_robot(supervisor)
+      refute Process.alive?(supervisor)
+      refute Process.alive?(robot)
+    end
   end
 
   def start_supervised_robot(_) do
-    {:ok, robot, supervisor} =
-      Hugh.start_supervised_robot(TestRobot, adapter: TestAdapter, sink: self())
+    {:ok, robot, supervisor} = Hugh.start_supervised_robot(TestRobot, {TestAdapter, sink: self()})
 
     on_exit(fn ->
       Hugh.stop_supervised_robot(supervisor)
     end)
 
-    {:ok, robot: robot}
+    {:ok, robot: robot, supervisor: supervisor}
   end
 end
