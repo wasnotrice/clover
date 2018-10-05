@@ -1,25 +1,36 @@
 defmodule Hugh.Adapter.Slack do
-  use Slack
+  use Hugh.Adapter
 
-  def handle_connect(slack, state) do
-    IO.puts("Connected as #{slack.me.name}")
+  def start_link(arg, opts \\ []) do
+    Hugh.Adapter.start_link(__MODULE__, arg, opts)
+  end
+
+  def init(opts, state) do
+    token = Keyword.fetch!(opts, :token)
+
+    case Slack.Bot.start_link(Hugh.Adapter.Slack.Connection, %{adapter: self()}, token, %{
+           name: :slack
+         }) do
+      {:ok, connection} ->
+        Process.monitor(connection)
+        {:ok, state}
+
+      error ->
+        error
+    end
+
     {:ok, state}
   end
 
-  def handle_event(message = %{type: "message"}, slack, state) do
-    send_message("I got a message!", message.channel, slack)
-    {:ok, state}
+  @impl Hugh.Adapter
+  def handle_in({:message, message}, _state) do
+    message
   end
 
-  def handle_event(_, _, state), do: {:ok, state}
+  @impl Hugh.Adapter
 
-  def handle_info({:message, text, channel}, slack, state) do
-    IO.puts("Sending your message, captain!")
-
-    send_message(text, channel, slack)
-
-    {:ok, state}
+  def handle_out({:send, message}, %{sink: sink} = state) do
+    Kernel.send(sink, {:out, message})
+    {:noreply, state}
   end
-
-  def handle_info(_, _, state), do: {:ok, state}
 end

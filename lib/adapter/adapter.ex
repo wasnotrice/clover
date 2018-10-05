@@ -17,6 +17,12 @@ defmodule Hugh.Adapter do
   """
   @callback process_suffix :: String.t()
 
+  @optional_callbacks [
+    handle_in: 2,
+    handle_out: 2,
+    process_suffix: 0
+  ]
+
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
       @behaviour Hugh.Adapter
