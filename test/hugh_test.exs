@@ -13,22 +13,20 @@ defmodule HughTest do
       assert_receive {:out, "hello"}
     end
 
-    test "stops", %{robot: robot, supervisor: supervisor} do
+    test "stops", %{robot: robot} do
       assert Process.alive?(robot)
-      assert Process.alive?(supervisor)
-      Hugh.stop_supervised_robot(supervisor)
-      refute Process.alive?(supervisor)
+      Hugh.stop_supervised_robot(robot)
       refute Process.alive?(robot)
     end
   end
 
   def start_supervised_robot(_) do
-    {:ok, robot, supervisor} = Hugh.start_supervised_robot(TestRobot, {TestAdapter, sink: self()})
+    {:ok, robot} = Hugh.start_supervised_robot(TestRobot, {TestAdapter, sink: self()})
 
     on_exit(fn ->
-      Hugh.stop_supervised_robot(supervisor)
+      Hugh.stop_supervised_robot(robot)
     end)
 
-    {:ok, robot: robot, supervisor: supervisor}
+    {:ok, robot: robot}
   end
 end

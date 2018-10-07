@@ -27,8 +27,8 @@ defmodule Hugh do
     )
   end
 
-  def stop_supervised_robot(sup, reason \\ :kill) do
-    Process.exit(sup, reason)
+  def stop_supervised_robot(robot) do
+    DynamicSupervisor.terminate_child(robot_supervisor(), robot)
   end
 
   def robot_supervisor, do: Hugh.Robots
