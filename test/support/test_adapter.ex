@@ -14,7 +14,7 @@ defmodule Hugh.Test.TestAdapter do
   def process_suffix, do: "TestAdapter"
 
   @impl Hugh.Adapter
-  def handle_in({:message, message}, _state) do
+  def handle_in({:message, message}, _state, _context) do
     message
   end
 

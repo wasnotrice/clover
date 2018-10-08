@@ -37,6 +37,10 @@ defmodule Hugh do
     "#{mod} does not export function #{function}"
   end
 
+  def format_error({:badarg, {mod, function, arg}}) do
+    "bad argument for #{mod}.#{function}: #{arg}"
+  end
+
   def format_error(reason) do
     reason
   end

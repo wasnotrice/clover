@@ -1,14 +1,19 @@
 defmodule Hugh.Adapter do
   use GenServer
 
-  alias Hugh.Robot
+  alias Hugh.{
+    Message,
+    Robot
+  }
 
   require Logger
 
   @type state :: map
 
-  @callback handle_in({tag :: atom, message :: map}, state :: state) :: {:noreply, state}
-  @callback handle_out({tag :: atom, message :: map}, state :: state) :: {:noreply, state}
+  @callback handle_in({tag :: atom, message :: Message.t()}, state :: state, context :: map) ::
+              {:message, Message.t(), state}
+  @callback handle_out({tag :: atom, message :: Message.t()}, state :: state) ::
+              {:sent, Message.t(), state}
 
   @doc """
   A suffix for this process's name in the local registry.
@@ -18,7 +23,7 @@ defmodule Hugh.Adapter do
   @callback process_suffix :: String.t()
 
   @optional_callbacks [
-    handle_in: 2,
+    handle_in: 3,
     handle_out: 2,
     process_suffix: 0
   ]
@@ -65,8 +70,8 @@ defmodule Hugh.Adapter do
     GenServer.cast(adapter, {:send, message})
   end
 
-  def incoming(adapter, message) do
-    GenServer.cast(adapter, {:incoming, message})
+  def incoming(adapter, message, context) do
+    GenServer.cast(adapter, {:incoming, message, context})
   end
 
   def process_suffix(adapter) do
@@ -82,9 +87,9 @@ defmodule Hugh.Adapter do
     {:reply, :ok, new_state}
   end
 
-  def handle_cast({:incoming, message}, %{mod: mod, robot: robot} = state) do
-    if function_exported?(mod, :handle_in, 2) do
-      message = mod.handle_in({:message, message}, state)
+  def handle_cast({:incoming, message, context}, %{mod: mod, robot: robot} = state) do
+    if function_exported?(mod, :handle_in, 3) do
+      {:ok, message, state} = mod.handle_in({:message, message}, state, context)
       Robot.handle_in(robot, message)
       {:noreply, state}
     else
@@ -99,6 +104,7 @@ defmodule Hugh.Adapter do
         Logger.debug("Adapter calling #{mod}.handle_out(#{inspect(message)}, #{inspect(state)})")
 
       mod.handle_out({:send, message}, state)
+      {:noreply, state}
     else
       _ = Logger.warn(Hugh.format_error({:not_exported, {mod, "handle_out/2"}}))
       {:noreply, state}

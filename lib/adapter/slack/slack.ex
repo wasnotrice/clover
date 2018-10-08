@@ -1,6 +1,8 @@
 defmodule Hugh.Adapter.Slack do
   use Hugh.Adapter
 
+  alias Hugh.Adapter
+
   def start_link(arg, opts \\ []) do
     Hugh.Adapter.start_link(__MODULE__, arg, opts)
   end
@@ -13,24 +15,22 @@ defmodule Hugh.Adapter.Slack do
          }) do
       {:ok, connection} ->
         Process.monitor(connection)
-        {:ok, state}
+        {:ok, Map.put(state, :connection, connection)}
 
       error ->
         error
     end
-
-    {:ok, state}
   end
 
   @impl Hugh.Adapter
-  def handle_in({:message, message}, _state) do
-    message
+  def handle_in({:message, message}, state, context) do
+    {:ok, __MODULE__.Message.from_external(message, state.robot, context), state}
   end
 
   @impl Hugh.Adapter
 
-  def handle_out({:send, message}, %{sink: sink} = state) do
-    Kernel.send(sink, {:out, message})
-    {:noreply, state}
+  def handle_out({:send, message}, %{connection: connection}) do
+    {text, channel} = __MODULE__.Message.to_external(message)
+    Kernel.send(connection, {:message, text, channel})
   end
 end

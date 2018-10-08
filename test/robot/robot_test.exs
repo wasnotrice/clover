@@ -11,7 +11,7 @@ defmodule Hugh.RobotTest do
   end
 
   test "robot responds to message", %{adapter: adapter} do
-    Adapter.incoming(adapter, "ping")
+    Adapter.incoming(adapter, "ping", %{})
     assert_receive({:out, "pong"})
   end
 
