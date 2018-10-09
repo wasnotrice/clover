@@ -4,13 +4,18 @@ defmodule Hugh.Message do
   """
   alias Hugh.User
 
-  defstruct robot: nil,
+  @type mention :: {start :: non_neg_integer, length :: non_neg_integer}
+  @type mentions :: %{required(String.t()) => mention}
+
+  defstruct mentions: %{},
+            robot: nil,
             room: nil,
             text: nil,
             type: nil,
             user: %User{}
 
   @type t :: %__MODULE__{
+          mentions: mentions(),
           robot: pid(),
           room: String.t(),
           text: String.t(),

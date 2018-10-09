@@ -4,18 +4,16 @@ defmodule Hugh.Robot do
   """
   use GenStateMachine, callback_mode: [:handle_event_function, :state_enter]
 
-  alias Hugh.Adapter
-
-  @callback handle_message({tag :: atom, message :: map}, data :: data) :: {:noreply, data}
-
-  @optional_callbacks [
-    handle_message: 2
-  ]
+  alias Hugh.{
+    Adapter,
+    Message
+  }
 
   @type state :: :normal
   @type data :: map
   @type action :: GenStateMachine.action()
   @type actions :: [action]
+  @type message_action :: :send | :reply | :emote
 
   require Logger
 
@@ -84,24 +82,23 @@ defmodule Hugh.Robot do
     GenStateMachine.call(robot, {:connect_adapter, adapter})
   end
 
-  def handle_event(:cast, {:incoming, message}, _state, %{mod: mod, adapter: adapter} = data) do
-    if function_exported?(mod, :handle_message, 2) do
-      _ =
-        Logger.debug(
-          "Adapter calling #{mod}.handle_message(#{inspect(message)}, #{inspect(data)})"
-        )
+  def handle_event(
+        :cast,
+        {:incoming, message},
+        _state,
+        %{mod: mod, adapter: adapter, handlers: handlers} = data
+      ) do
+    case handle_message(message, data, handlers) do
+      {:reply, {:send, message}, new_data} ->
+        Adapter.send(adapter, message)
+        {:keep_state, new_data}
 
-      case mod.handle_message(message, data) do
-        {:reply, {:send, message}, _data} ->
-          Adapter.send(adapter, message)
-          :keep_state_and_data
+      {:noreply, new_data} ->
+        {:keep_state, new_data}
 
-        bad_return ->
-          _ = Logger.warn("bad return from #{mod}.handle_message/2: #{inspect(bad_return)}")
-      end
-    else
-      _ = Logger.warn(Hugh.format_error({:not_exported, {mod, "handle_message/2"}}))
-      :keep_state_and_data
+      bad_return ->
+        _ = Logger.warn("bad return from #{mod}.handle_message/2: #{inspect(bad_return)}")
+        :keep_state_and_data
     end
   end
 
@@ -122,5 +119,14 @@ defmodule Hugh.Robot do
 
   def handle_event(_type, _event, _state, _data) do
     :keep_state_and_data
+  end
+
+  defp handle_message(_message, data, []), do: {:noreply, data}
+
+  defp handle_message(message, data, [handler | tail]) do
+    case handler.(message, data) do
+      {:reply, {mode, message}, data} -> {:reply, {mode, message}, data}
+      _ -> handle_message(message, data, tail)
+    end
   end
 end

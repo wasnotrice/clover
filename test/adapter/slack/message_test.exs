@@ -24,6 +24,9 @@ defmodule Hugh.Adapter.Slack.MessageTest do
 
   def context do
     %{
+      me: %{
+        id: "U9U9U9U9U"
+      },
       users: %{}
     }
   end
@@ -32,6 +35,9 @@ defmodule Hugh.Adapter.Slack.MessageTest do
     message = Slack.Message.from_external(slack(), self, context())
 
     assert message == %Message{
+             mentions: %{
+               "U9U9U9U9U" => {0, 12}
+             },
              room: "C3C3C3C3C",
              robot: self(),
              text: "<@U9U9U9U9U> hi",

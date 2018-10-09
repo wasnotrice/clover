@@ -1,31 +1,25 @@
 defmodule Hugh.Test.TestRobot do
   use Hugh.Robot
 
-  alias Hugh.Adapter
+  alias Hugh.Message
 
   def init(_arg) do
-    {:ok, %{}}
+    handlers = [
+      fn %Message{text: text} = message, data ->
+        case String.trim(text) do
+          "ping" -> {:reply, {:send, Map.put(message, :text, "pong")}, data}
+          _ -> {:noreply, data}
+        end
+      end,
+      fn message, data ->
+        {:reply, {:send, message}, data}
+      end
+    ]
+
+    {:ok, %{handlers: handlers}}
   end
 
   def start_link(arg, opts \\ []) do
     Hugh.Robot.start_link(__MODULE__, arg, opts)
-  end
-
-  def handle_message(message, data) do
-    response =
-      case message do
-        "ping" -> {:send, "pong"}
-        message -> {:send, message}
-      end
-
-    {:reply, response, data}
-  end
-
-  def handle_event(:enter, :disconnected, :disconnected, _data) do
-    :keep_state_and_data
-  end
-
-  def handle_event(_type, _event, _state, _data) do
-    :keep_state_and_data
   end
 end
