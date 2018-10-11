@@ -70,6 +70,10 @@ defmodule Hugh.Robot do
     GenStateMachine.cast(robot, {:send, message})
   end
 
+  def name(robot) do
+    GenStateMachine.call(robot, :name)
+  end
+
   def get_adapter(robot) do
     GenStateMachine.call(robot, :get_adapter)
   end
@@ -88,6 +92,10 @@ defmodule Hugh.Robot do
         _state,
         %{mod: mod, adapter: adapter, handlers: handlers} = data
       ) do
+  def connected(robot, connection_state) do
+    GenStateMachine.call(robot, {:connected, connection_state})
+  end
+
     case handle_message(message, data, handlers) do
       {:reply, {:send, message}, new_data} ->
         Adapter.send(adapter, message)
@@ -113,8 +121,29 @@ defmodule Hugh.Robot do
     {:next_state, :connected, new_data, [{:reply, from, :ok}]}
   end
 
+  def handle_event({:call, from}, {:connected, connection_state}, _state, %{mod: mod} = data) do
+    data =
+      case Map.get(connection_state, :robot_name) do
+        nil -> data
+        name -> Map.put(data, :name, name)
+      end
+
+    if function_exported?(mod, :handle_connected, 2) do
+      case mod.handle_connected(connection_state, data) do
+        {:ok, new_data} -> {:next_state, :connected, new_data, [{:reply, from, :ok}]}
+        {:error, error} -> {:next_state, :disconnected, data, [{:reply, from, {:error, error}}]}
+      end
+    else
+      {:next_state, :connected, data, [{:reply, from, :ok}]}
+    end
+  end
+
   def handle_event({:call, from}, :get_adapter, _state, %{adapter: adapter}) do
     {:keep_state_and_data, [{:reply, from, adapter}]}
+  end
+
+  def handle_event({:call, from}, :name, _state, data) do
+    {:keep_state_and_data, [{:reply, from, Map.get(data, :name)}]}
   end
 
   def handle_event(_type, _event, _state, _data) do

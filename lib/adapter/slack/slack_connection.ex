@@ -6,6 +6,7 @@ defmodule Hugh.Adapter.Slack.Connection do
 
   def handle_connect(slack, state) do
     log(:debug, "connected as #{slack.me.name}")
+    Adapter.connected(state.adapter, slack)
     {:ok, state}
   end
 

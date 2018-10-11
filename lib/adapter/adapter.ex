@@ -66,6 +66,10 @@ defmodule Hugh.Adapter do
     GenServer.call(adapter, {:connect_robot, robot})
   end
 
+  def connected(adapter, state) do
+    GenServer.call(adapter, {:connected, state})
+  end
+
   def send(adapter, message) do
     GenServer.cast(adapter, {:send, message})
   end
@@ -85,6 +89,11 @@ defmodule Hugh.Adapter do
   def handle_call({:connect_robot, robot}, _from, state) do
     new_state = Map.put(state, :robot, robot)
     {:reply, :ok, new_state}
+  end
+
+  def handle_call({:connected, connection_state}, _from, %{robot: robot} = state) do
+    Robot.connected(robot, connection_state)
+    {:reply, :ok, state}
   end
 
   def handle_cast({:incoming, message, context}, %{mod: mod, robot: robot} = state) do
