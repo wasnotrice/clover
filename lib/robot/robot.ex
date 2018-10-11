@@ -4,18 +4,26 @@ defmodule Hugh.Robot do
   """
   use GenStateMachine, callback_mode: [:handle_event_function, :state_enter]
 
+  @callback message_handlers() :: [function]
+  @callback handle_connected(connection_state :: map, data :: data()) ::
+              {:ok, data()} | {:error, Hugh.Error}
+
+  @optional_callbacks [
+    message_handlers: 0
+  ]
+
   alias Hugh.{
     Adapter,
     Message
   }
+
+  alias Hugh.Util.Logger
 
   @type state :: :normal
   @type data :: map
   @type action :: GenStateMachine.action()
   @type actions :: [action]
   @type message_action :: :send | :reply | :emote
-
-  require Logger
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
@@ -86,18 +94,18 @@ defmodule Hugh.Robot do
     GenStateMachine.call(robot, {:connect_adapter, adapter})
   end
 
-  def handle_event(
-        :cast,
-        {:incoming, message},
-        _state,
-        %{mod: mod, adapter: adapter, handlers: handlers} = data
-      ) do
   def connected(robot, connection_state) do
     GenStateMachine.call(robot, {:connected, connection_state})
   end
 
+  def handle_event(:cast, {:incoming, message}, _state, %{mod: mod, adapter: adapter} = data) do
+    handlers =
+      if function_exported?(mod, :message_handlers, 0),
+        do: mod.message_handlers(),
+        else: []
+
     case handle_message(message, data, handlers) do
-      {:reply, {:send, message}, new_data} ->
+      {:send, message, new_data} ->
         Adapter.send(adapter, message)
         {:keep_state, new_data}
 
@@ -105,7 +113,7 @@ defmodule Hugh.Robot do
         {:keep_state, new_data}
 
       bad_return ->
-        _ = Logger.warn("bad return from #{mod}.handle_message/2: #{inspect(bad_return)}")
+        _ = log(:warn, "bad return from #{mod}.handle_message/2: #{inspect(bad_return)}")
         :keep_state_and_data
     end
   end
@@ -118,7 +126,7 @@ defmodule Hugh.Robot do
   def handle_event({:call, from}, {:connect_adapter, adapter}, _state, data) do
     :ok = Adapter.connect(adapter, to: self())
     new_data = Map.put(data, :adapter, adapter)
-    {:next_state, :connected, new_data, [{:reply, from, :ok}]}
+    {:next_state, :connecting, new_data, [{:reply, from, :ok}]}
   end
 
   def handle_event({:call, from}, {:connected, connection_state}, _state, %{mod: mod} = data) do
@@ -152,10 +160,30 @@ defmodule Hugh.Robot do
 
   defp handle_message(_message, data, []), do: {:noreply, data}
 
-  defp handle_message(message, data, [handler | tail]) do
-    case handler.(message, data) do
-      {:reply, {mode, message}, data} -> {:reply, {mode, message}, data}
-      _ -> handle_message(message, data, tail)
+  defp handle_message(message, data, [%{match: match, respond: respond} | tail]) do
+    message.text
+    |> trim_leading_mention("me", message.mentions)
+    |> String.match?(match)
+    |> case do
+      true ->
+        respond.(message, data)
+
+      false ->
+        log(:debug, "no handler match", inspect: match)
+        handle_message(message, data, tail)
     end
+  end
+
+  defp trim_leading_mention(text, me, mentions) do
+    mentions
+    |> Enum.find(fn {id, {start, _}} -> id == me && start == 0 end)
+    |> case do
+      nil -> text
+      {_, {start, length}} -> String.slice(text, start..length)
+    end
+  end
+
+  defp log(level, message, opts \\ []) do
+    Logger.log(level, message, Keyword.put(opts, :label, "robot"))
   end
 end

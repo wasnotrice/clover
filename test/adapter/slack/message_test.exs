@@ -32,7 +32,7 @@ defmodule Hugh.Adapter.Slack.MessageTest do
   end
 
   test "from_external" do
-    message = Slack.Message.from_external(slack(), self, context())
+    message = Slack.Message.from_external(slack(), self(), context())
 
     assert message == %Message{
              mentions: %{
