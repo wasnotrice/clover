@@ -1,12 +1,24 @@
 defmodule Hugh.Adapter.Slack.Connection do
   use Slack
 
-  alias Hugh.Adapter
+  alias Hugh.{
+    Adapter,
+    User
+  }
+
   alias Hugh.Util.Logger
 
   def handle_connect(slack, state) do
     log(:debug, "connected as #{slack.me.name}")
-    Adapter.connected(state.adapter, slack)
+
+    connection_state = %{
+      me: %User{
+        id: slack.me.id,
+        name: slack.me.name
+      }
+    }
+
+    Adapter.connected(state.adapter, connection_state)
     {:ok, state}
   end
 
@@ -36,6 +48,6 @@ defmodule Hugh.Adapter.Slack.Connection do
   end
 
   defp log(level, message, opts \\ []) do
-    Logger.log(level, message, Keyword.put(opts, :label, "slack"))
+    Logger.log(level, "slack", message, opts)
   end
 end

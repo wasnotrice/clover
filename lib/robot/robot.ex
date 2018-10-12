@@ -130,10 +130,12 @@ defmodule Hugh.Robot do
   end
 
   def handle_event({:call, from}, {:connected, connection_state}, _state, %{mod: mod} = data) do
+    log(:debug, "connected", inspect: connection_state)
+
     data =
-      case Map.get(connection_state, :robot_name) do
-        nil -> data
-        name -> Map.put(data, :name, name)
+      case Map.get(connection_state, :me) do
+        %User{} = me -> Map.put(data, :me, me)
+        _ -> data
       end
 
     if function_exported?(mod, :handle_connected, 2) do
@@ -151,7 +153,8 @@ defmodule Hugh.Robot do
   end
 
   def handle_event({:call, from}, :name, _state, data) do
-    {:keep_state_and_data, [{:reply, from, Map.get(data, :name)}]}
+    %User{name: name} = Map.get(data, :me, %User{})
+    {:keep_state_and_data, [{:reply, from, name}]}
   end
 
   def handle_event(_type, _event, _state, _data) do

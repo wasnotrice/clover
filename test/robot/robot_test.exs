@@ -2,7 +2,7 @@ defmodule Hugh.RobotTest do
   use ExUnit.Case, async: true
 
   alias Hugh.Test.{TestAdapter, TestRobot}
-  alias Hugh.{Adapter, Robot}
+  alias Hugh.{Adapter, Robot, User}
 
   setup do
     robot = start_supervised!(TestRobot.child_spec({TestAdapter, sink: self()}, name: Doug))
@@ -22,7 +22,8 @@ defmodule Hugh.RobotTest do
   end
 
   test "robot receives name", %{robot: robot, adapter: adapter} do
-    Adapter.connected(adapter, %{robot_name: "doug"})
+    robot_user = %User{id: "doug", name: "doug"}
+    Adapter.connected(adapter, %{me: robot_user})
     assert Robot.name(robot) == "doug"
   end
 end
