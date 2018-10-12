@@ -101,7 +101,7 @@ defmodule Hugh.Adapter do
       Robot.handle_in(robot, message)
       {:noreply, state}
     else
-      _ = log(:error, Hugh.format_error({:not_exported, {mod, "handle_in/2"}}))
+      log(:error, Hugh.format_error({:not_exported, {mod, "handle_in/2"}}))
       {:noreply, state}
     end
   end
