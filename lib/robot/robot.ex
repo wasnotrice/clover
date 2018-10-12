@@ -4,7 +4,7 @@ defmodule Hugh.Robot do
   """
   use GenStateMachine, callback_mode: [:handle_event_function, :state_enter]
 
-  @callback message_handlers() :: [function]
+  @callback message_handlers() :: [message_handler]
   @callback handle_connected(connection_state :: map, data :: data()) ::
               {:ok, data()} | {:error, Hugh.Error}
 
@@ -14,7 +14,9 @@ defmodule Hugh.Robot do
 
   alias Hugh.{
     Adapter,
-    Message
+    Message,
+    MessageHandler,
+    User
   }
 
   alias Hugh.Util.Logger
@@ -24,6 +26,7 @@ defmodule Hugh.Robot do
   @type action :: GenStateMachine.action()
   @type actions :: [action]
   @type message_action :: :send | :reply | :emote
+  @type message_handler :: MessageHandler.t()
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
