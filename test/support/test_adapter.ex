@@ -2,7 +2,9 @@ defmodule Hugh.Test.TestAdapter do
   use Hugh.Adapter
 
   alias Hugh.{
-    Message
+    Adapter,
+    Message,
+    User
   }
 
   def start_link({robot, adapter_opts}, opts \\ []) do
@@ -11,6 +13,8 @@ defmodule Hugh.Test.TestAdapter do
 
   def init(opts, state) do
     sink = Keyword.fetch!(opts, :sink)
+    adapter = self()
+    spawn(fn -> Adapter.connected(adapter, %{me: %User{id: "test", name: "test"}}) end)
     {:ok, Map.merge(state, %{sink: sink})}
   end
 
@@ -21,7 +25,11 @@ defmodule Hugh.Test.TestAdapter do
   def handle_in({:message, text}, %{robot: robot} = state, _context) do
     message = %Message{
       robot: robot,
-      text: text
+      text: text,
+      user: %User{
+        id: "test",
+        name: "test"
+      }
     }
 
     {:ok, message, state}
