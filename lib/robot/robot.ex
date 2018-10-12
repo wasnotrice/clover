@@ -81,8 +81,8 @@ defmodule Hugh.Robot do
     GenStateMachine.call(robot, :name)
   end
 
-  def get_adapter(robot) do
-    GenStateMachine.call(robot, :get_adapter)
+  def adapter(robot) do
+    GenStateMachine.call(robot, :adapter)
   end
 
   def handle_in(robot, message) do
@@ -149,7 +149,7 @@ defmodule Hugh.Robot do
     end
   end
 
-  def handle_event({:call, from}, :get_adapter, _state, %{adapter: adapter}) do
+  def handle_event({:call, from}, :adapter, _state, %{adapter: adapter}) do
     {:keep_state_and_data, [{:reply, from, adapter}]}
   end
 

@@ -7,7 +7,7 @@ defmodule Hugh.RobotTest do
   setup do
     robot = start_supervised!(TestRobot.child_spec({TestAdapter, sink: self()}, name: Doug))
 
-    adapter = Robot.get_adapter(robot)
+    adapter = Robot.adapter(robot)
     {:ok, robot: robot, adapter: adapter}
   end
 
