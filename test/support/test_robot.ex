@@ -21,9 +21,7 @@ defmodule Hugh.Test.TestRobot do
   def message_handlers do
     [
       pong(),
-      fn message, data ->
-        {:reply, {:send, message}, data}
-      end
+      echo()
     ]
   end
 
@@ -32,6 +30,15 @@ defmodule Hugh.Test.TestRobot do
       match: ~r/^ping$/,
       respond: fn message, data ->
         {:send, Map.put(message, :text, "pong"), data}
+      end
+    }
+  end
+
+  defp echo do
+    %MessageHandler{
+      match: ~r/.*/,
+      respond: fn message, data ->
+        {:send, message, data}
       end
     }
   end

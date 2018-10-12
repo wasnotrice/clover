@@ -165,26 +165,14 @@ defmodule Hugh.Robot do
 
   defp handle_message(_message, data, []), do: {:noreply, data}
 
-  defp handle_message(message, data, [%{match: match, respond: respond} | tail]) do
-    message.text
-    |> trim_leading_mention("me", message.mentions)
-    |> String.match?(match)
-    |> case do
-      true ->
-        respond.(message, data)
+  defp handle_message(message, data, [handler | tail]) do
+    case MessageHandler.handle(handler, message, data) do
+      {mode, message, data} ->
+        {mode, message, data}
 
       _ ->
         log(:debug, "no handler match", inspect: handler)
         handle_message(message, data, tail)
-    end
-  end
-
-  defp trim_leading_mention(text, me, mentions) do
-    mentions
-    |> Enum.find(fn {id, {start, _}} -> id == me && start == 0 end)
-    |> case do
-      nil -> text
-      {_, {start, length}} -> String.slice(text, start..length)
     end
   end
 
