@@ -67,11 +67,7 @@ defmodule Hugh.Robot do
 
     state = :uninitialized
     {:ok, data} = mod.init(arg)
-
-    data =
-      data
-      |> Map.put(:adapter, adapter)
-      |> Map.put(:mod, mod)
+    data = Map.merge(data, %{adapter: adapter, mod: mod})
 
     {:ok, state, data}
   end
@@ -123,8 +119,8 @@ defmodule Hugh.Robot do
     end
   end
 
-  def handle_event(:cast, {:send, message}, _state, %{adapter: adapter}) do
-    Adapter.send(adapter, message)
+  def handle_event(:cast, {:send, text}, _state, %{adapter: adapter}) when is_binary(text) do
+    Adapter.send(adapter, text)
     :keep_state_and_data
   end
 
