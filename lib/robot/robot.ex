@@ -99,6 +99,8 @@ defmodule Hugh.Robot do
   end
 
   def handle_event(:cast, {:incoming, message}, _state, %{mod: mod, adapter: adapter} = data) do
+    log(:debug, "message", inspect: message)
+
     handlers =
       if function_exported?(mod, :message_handlers, 0),
         do: mod.message_handlers(),
@@ -171,8 +173,8 @@ defmodule Hugh.Robot do
       true ->
         respond.(message, data)
 
-      false ->
-        log(:debug, "no handler match", inspect: match)
+      _ ->
+        log(:debug, "no handler match", inspect: handler)
         handle_message(message, data, tail)
     end
   end
@@ -187,6 +189,6 @@ defmodule Hugh.Robot do
   end
 
   defp log(level, message, opts \\ []) do
-    Logger.log(level, message, Keyword.put(opts, :label, "robot"))
+    Logger.log(level, "robot", message, opts)
   end
 end

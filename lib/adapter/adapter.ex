@@ -6,8 +6,6 @@ defmodule Hugh.Adapter do
     Robot
   }
 
-  require Logger
-
   @type state :: map
 
   @callback handle_in({tag :: atom, message :: Message.t()}, state :: state, context :: map) ::
@@ -92,6 +90,7 @@ defmodule Hugh.Adapter do
   end
 
   def handle_call({:connected, connection_state}, _from, %{robot: robot} = state) do
+    log(:debug, "connected", inspect: connection_state)
     Robot.connected(robot, connection_state)
     {:reply, :ok, state}
   end
@@ -102,21 +101,24 @@ defmodule Hugh.Adapter do
       Robot.handle_in(robot, message)
       {:noreply, state}
     else
-      _ = Logger.warn(Hugh.format_error({:not_exported, {mod, "handle_in/2"}}))
+      _ = log(:error, Hugh.format_error({:not_exported, {mod, "handle_in/2"}}))
       {:noreply, state}
     end
   end
 
   def handle_cast({:send, message}, %{mod: mod} = state) do
     if function_exported?(mod, :handle_out, 2) do
-      _ =
-        Logger.debug("Adapter calling #{mod}.handle_out(#{inspect(message)}, #{inspect(state)})")
+      log(:debug, "Adapter calling #{mod}.handle_out(#{inspect(message)}, #{inspect(state)})")
 
       mod.handle_out({:send, message}, state)
       {:noreply, state}
     else
-      _ = Logger.warn(Hugh.format_error({:not_exported, {mod, "handle_out/2"}}))
+      log(:warn, Hugh.format_error({:not_exported, {mod, "handle_out/2"}}))
       {:noreply, state}
     end
+  end
+
+  def log(level, message, opts \\ []) do
+    Hugh.Util.Logger.log(level, "adapter", message, opts)
   end
 end

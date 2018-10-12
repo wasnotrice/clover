@@ -5,8 +5,6 @@ defmodule Hugh.Test.TestRobot do
     MessageHandler
   }
 
-  alias Hugh.Util.Logger
-
   def init(_arg) do
     {:ok, %{}}
   end
@@ -39,6 +37,6 @@ defmodule Hugh.Test.TestRobot do
   end
 
   defp log(level, message, opts) do
-    Logger.log(level, message, Keyword.put(opts, :label, "test robot"))
+    Hugh.Util.Logger.log(level, "test robot", message, opts)
   end
 end

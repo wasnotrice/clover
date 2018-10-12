@@ -1,41 +1,37 @@
 defmodule Hugh.Util.Logger do
   require Logger
 
-  def log(level, message, opts \\ []) do
-    good_opts =
-      case check_opts(opts) do
-        {:ok, good} -> good
-        {:error, error} -> raise error
-      end
+  @keys [:inspect]
 
-    Logger.log(level, log_message(message, good_opts))
+  def log(level, label, message, opts \\ []) do
+    options = Enum.reduce(opts, %{}, &extract_option/2)
+    Logger.log(level, log_message(label, message, options))
   end
 
-  defp check_opts(opts) do
-    valid_keys = [:label, :inspect]
-
-    case Keyword.keys(opts) -- valid_keys do
-      [] -> {:ok, opts}
-      keys -> {:error, Hugh.Error.exception({:badarg, {__MODULE__, "log options", keys}})}
-    end
+  defp extract_option({:inspect, thing}, options) do
+    Map.put(options, :inspect, thing)
   end
 
-  def log_message(message, opts) do
-    prefix =
-      case Keyword.get(opts, :label) do
-        nil -> nil
-        label -> "[#{label}]"
-      end
+  defp extract_option({key, _}, _) do
+    {:error, Hugh.Error.exception({:badarg, {__MODULE__, "log option", key, @keys}})}
+  end
 
-    postfix =
-      case Keyword.get(opts, :inspect) do
-        nil -> nil
-        thing -> inspect(thing)
-      end
-
+  def log_message(label, message, opts) do
     fn ->
+      prefix =
+        case label do
+          nil -> nil
+          label -> "[#{label}]"
+        end
+
+      postfix =
+        case Map.get(opts, :inspect) do
+          nil -> nil
+          thing -> inspect(thing)
+        end
+
       [prefix, message, postfix]
-      |> Enum.filter(fn frag -> frag end)
+      |> Enum.filter(& &1)
       |> Enum.join(" ")
     end
   end
