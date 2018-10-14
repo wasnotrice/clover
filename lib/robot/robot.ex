@@ -62,6 +62,8 @@ defmodule Hugh.Robot do
   end
 
   def init({mod, {adapter, adapter_opts}, name} = arg) do
+    Process.flag(:trap_exit, true)
+
     opts = Keyword.put(adapter_opts, :robot_name, name)
     {:ok, adapter} = Hugh.Adapter.Supervisor.start_adapter(adapter, adapter_opts, self(), opts)
 
@@ -74,7 +76,7 @@ defmodule Hugh.Robot do
 
   @spec send(atom() | pid() | {atom(), any()} | {:via, atom(), any()}, any()) :: :ok
   def send(robot, message) do
-    GenStateMachine.cast(robot, {:send, message})
+    GenStateMachine.cast(Hugh.via_tuple(robot), {:send, message})
   end
 
   def name(robot) do
@@ -95,6 +97,10 @@ defmodule Hugh.Robot do
 
   def connected(robot, connection_state) do
     GenStateMachine.call(robot, {:connected, connection_state})
+  end
+
+  def terminate(reason, _state, _data) do
+    log(:error, "terminate", inspect: reason)
   end
 
   def handle_event(:cast, {:incoming, message}, _state, %{mod: mod, adapter: adapter} = data) do

@@ -10,9 +10,7 @@ defmodule Hugh.Adapter.Slack do
   def init(opts, state) do
     token = Keyword.fetch!(opts, :token)
 
-    case Slack.Bot.start_link(Hugh.Adapter.Slack.Connection, %{adapter: self()}, token, %{
-           name: :slack
-         }) do
+    case Slack.Bot.start_link(Hugh.Adapter.Slack.Connection, %{adapter: self()}, token) do
       {:ok, connection} ->
         Process.monitor(connection)
         {:ok, Map.put(state, :connection, connection)}

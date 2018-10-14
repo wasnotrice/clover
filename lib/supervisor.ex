@@ -7,7 +7,11 @@ defmodule Hugh.Supervisor do
   end
 
   def init(_opts) do
-    children = [{DynamicSupervisor, name: Hugh.robot_supervisor(), strategy: :one_for_one}]
+    children = [
+      {Registry, keys: :unique, name: Hugh.Registry},
+      {DynamicSupervisor, name: Hugh.robot_supervisor(), strategy: :one_for_one}
+    ]
+
     Supervisor.init(children, strategy: :one_for_one)
   end
 end
