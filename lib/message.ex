@@ -16,7 +16,7 @@ defmodule Clover.Message do
 
   @type t :: %__MODULE__{
           mentions: mentions(),
-          robot: pid(),
+          robot: String.t(),
           room: String.t(),
           text: String.t(),
           type: String.t(),
