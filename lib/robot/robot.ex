@@ -50,14 +50,13 @@ defmodule Clover.Robot do
 
   @spec start_link(atom(), {String.t(), atom() | {atom(), any()}}) ::
           :ignore | {:error, any()} | {:ok, pid()}
-  def start_link(mod, name) do
-    start_link(mod, name, [])
-  end
+  def start_link(mod, name, opts \\ [])
 
   def start_link(mod, name, opts) do
     GenStateMachine.start_link(__MODULE__, {mod, name}, opts)
   end
 
+  @doc false
   def init({mod, name} = arg) do
     Process.flag(:trap_exit, true)
 
@@ -110,6 +109,7 @@ defmodule Clover.Robot do
     log(:error, "terminate", inspect: reason)
   end
 
+  @doc false
   def handle_event(:cast, {:incoming, message}, _state, %{mod: mod, name: name} = data) do
     log(:debug, "message", inspect: message)
 
@@ -132,12 +132,14 @@ defmodule Clover.Robot do
     end
   end
 
+  @doc false
   def handle_event(:cast, {:send, text}, _state, %{name: name} = data)
       when is_binary(text) do
     Adapter.send(name, text)
     :keep_state_and_data
   end
 
+  @doc false
   def handle_event({:call, from}, {:connected, connection_state}, _state, %{mod: mod} = data) do
     log(:debug, "connected", inspect: connection_state)
 
@@ -157,11 +159,13 @@ defmodule Clover.Robot do
     end
   end
 
+  @doc false
   def handle_event({:call, from}, :name, _state, data) do
     %User{name: name} = Map.get(data, :me, %User{})
     {:keep_state_and_data, [{:reply, from, name}]}
   end
 
+  @doc false
   def handle_event(_type, _event, _state, _data) do
     :keep_state_and_data
   end

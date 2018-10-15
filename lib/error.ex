@@ -1,4 +1,7 @@
 defmodule Clover.Error do
+  @moduledoc """
+  A Clover error
+  """
   defexception [:reason]
 
   def exception(reason),
