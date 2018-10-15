@@ -1,12 +1,12 @@
-defmodule Hugh.Adapter.Slack.Message do
-  @behaviour Hugh.Adapter.Message
+defmodule Clover.Adapter.Slack.Message do
+  @behaviour Clover.Adapter.Message
 
-  alias Hugh.{
+  alias Clover.{
     Message,
     User
   }
 
-  @impl Hugh.Adapter.Message
+  @impl Clover.Adapter.Message
   def from_external(slack, robot, context) do
     user_id = slack[:user]
     text = slack[:text]
@@ -23,7 +23,7 @@ defmodule Hugh.Adapter.Slack.Message do
     }
   end
 
-  @impl Hugh.Adapter.Message
+  @impl Clover.Adapter.Message
   def to_external(%Message{text: text, room: channel}) do
     {text, channel}
   end

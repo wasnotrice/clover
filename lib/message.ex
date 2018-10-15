@@ -1,8 +1,8 @@
-defmodule Hugh.Message do
+defmodule Clover.Message do
   @moduledoc """
-  A Hugh message
+  A Clover message
   """
-  alias Hugh.User
+  alias Clover.User
 
   @type mention :: {start :: non_neg_integer, length :: non_neg_integer}
   @type mentions :: %{required(String.t()) => mention}

@@ -1,10 +1,10 @@
-defmodule Hugh.Adapter.Slack.MessageTest do
+defmodule Clover.Adapter.Slack.MessageTest do
   @moduledoc false
   use ExUnit.Case, async: true
 
-  alias Hugh.Adapter.Slack
+  alias Clover.Adapter.Slack
 
-  alias Hugh.{
+  alias Clover.{
     Message,
     User
   }

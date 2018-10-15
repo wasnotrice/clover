@@ -1,14 +1,14 @@
-defmodule Hugh.Test.TestAdapter do
-  use Hugh.Adapter
+defmodule Clover.Test.TestAdapter do
+  use Clover.Adapter
 
-  alias Hugh.{
+  alias Clover.{
     Adapter,
     Message,
     User
   }
 
   def start_link({robot, adapter_opts}, opts \\ []) do
-    Hugh.Adapter.start_link(__MODULE__, {robot, adapter_opts}, opts)
+    Clover.Adapter.start_link(__MODULE__, {robot, adapter_opts}, opts)
   end
 
   def init(opts, %{robot: robot} = state) do
@@ -17,10 +17,10 @@ defmodule Hugh.Test.TestAdapter do
     {:ok, Map.merge(state, %{sink: sink})}
   end
 
-  @impl Hugh.Adapter
+  @impl Clover.Adapter
   def process_suffix, do: "TestAdapter"
 
-  @impl Hugh.Adapter
+  @impl Clover.Adapter
   def handle_in({:message, text}, %{robot: robot} = state, _context) do
     message = %Message{
       robot: robot,
@@ -34,7 +34,7 @@ defmodule Hugh.Test.TestAdapter do
     {:ok, message, state}
   end
 
-  @impl Hugh.Adapter
+  @impl Clover.Adapter
 
   def handle_out({:send, %Message{text: text}}, %{sink: sink}) do
     Kernel.send(sink, {:out, text})

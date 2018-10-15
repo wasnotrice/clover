@@ -1,9 +1,9 @@
-defmodule Hugh.RobotTest do
+defmodule Clover.RobotTest do
   use ExUnit.Case, async: true
 
-  alias Hugh.Test.{TestAdapter, TestRobot}
-  alias Hugh.{Adapter, Robot, User}
-  alias Hugh.Robot.Supervisor, as: RobotSupervisor
+  alias Clover.Test.{TestAdapter, TestRobot}
+  alias Clover.{Adapter, Robot, User}
+  alias Clover.Robot.Supervisor, as: RobotSupervisor
 
   setup do
     name = "doug"

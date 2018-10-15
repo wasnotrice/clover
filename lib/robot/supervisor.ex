@@ -1,5 +1,5 @@
-defmodule Hugh.Robot.Supervisor do
-  alias Hugh.{
+defmodule Clover.Robot.Supervisor do
+  alias Clover.{
     Adapter,
     Robot
   }

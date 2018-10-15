@@ -1,4 +1,4 @@
-defmodule Hugh.Robot do
+defmodule Clover.Robot do
   @moduledoc """
   A Robot.
   """
@@ -6,20 +6,20 @@ defmodule Hugh.Robot do
 
   @callback message_handlers() :: [message_handler]
   @callback handle_connected(connection_state :: map, data :: data()) ::
-              {:ok, data()} | {:error, Hugh.Error}
+              {:ok, data()} | {:error, Clover.Error}
 
   @optional_callbacks [
     message_handlers: 0
   ]
 
-  alias Hugh.{
+  alias Clover.{
     Adapter,
     Message,
     MessageHandler,
     User
   }
 
-  alias Hugh.Util.Logger
+  alias Clover.Util.Logger
 
   @type state :: :normal
   @type data :: map
@@ -30,7 +30,7 @@ defmodule Hugh.Robot do
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
-      @behaviour Hugh.Robot
+      @behaviour Clover.Robot
 
       if Code.ensure_loaded?(Supervisor) and function_exported?(Supervisor, :init, 2) do
         @doc false
@@ -92,18 +92,18 @@ defmodule Hugh.Robot do
 
   defp call(robot_name, message) do
     robot_name
-    |> Hugh.whereis_robot()
+    |> Clover.whereis_robot()
     |> GenServer.call(message)
   end
 
   defp cast(robot_name, message) do
     robot_name
-    |> Hugh.whereis_robot()
+    |> Clover.whereis_robot()
     |> GenServer.cast(message)
   end
 
   def via_tuple(name) do
-    {:via, Registry, {Hugh.registry(), name}}
+    {:via, Registry, {Clover.registry(), name}}
   end
 
   def terminate(reason, _state, _data) do

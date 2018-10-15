@@ -1,7 +1,7 @@
-defmodule Hugh.Test.TestRobot do
-  use Hugh.Robot
+defmodule Clover.Test.TestRobot do
+  use Clover.Robot
 
-  alias Hugh.{
+  alias Clover.{
     MessageHandler
   }
 
@@ -10,7 +10,7 @@ defmodule Hugh.Test.TestRobot do
   end
 
   def start_link(arg, opts \\ []) do
-    Hugh.Robot.start_link(__MODULE__, arg, opts)
+    Clover.Robot.start_link(__MODULE__, arg, opts)
   end
 
   def handle_connected(connection_state, data) do
@@ -44,6 +44,6 @@ defmodule Hugh.Test.TestRobot do
   end
 
   defp log(level, message, opts) do
-    Hugh.Util.Logger.log(level, "test robot", message, opts)
+    Clover.Util.Logger.log(level, "test robot", message, opts)
   end
 end

@@ -1,5 +1,5 @@
-defmodule Hugh.MessageHandler do
-  alias Hugh.{
+defmodule Clover.MessageHandler do
+  alias Clover.{
     User
   }
 

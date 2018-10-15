@@ -1,19 +1,19 @@
-defmodule HughTest do
+defmodule CloverTest do
   use ExUnit.Case, async: false
-  doctest Hugh
+  doctest Clover
 
-  alias Hugh.Test.{TestAdapter, TestRobot}
+  alias Clover.Test.{TestAdapter, TestRobot}
 
   describe "a supervised robot" do
     setup :start_supervised_robot
 
     test "starts", %{robot: robot} do
-      Hugh.Robot.send(robot, "hello")
+      Clover.Robot.send(robot, "hello")
       assert_receive {:out, "hello"}
     end
 
     test "restarts", %{robot: robot} do
-      assert pid = Hugh.whereis_robot(robot)
+      assert pid = Clover.whereis_robot(robot)
       assert Process.alive?(pid)
 
       # Kill robot
@@ -23,20 +23,20 @@ defmodule HughTest do
       # Wait for robot to be restarted
       Process.sleep(10)
 
-      assert restarted_pid = Hugh.whereis_robot(robot)
+      assert restarted_pid = Clover.whereis_robot(robot)
       assert restarted_pid != pid
     end
 
     test "stops", %{robot: robot} do
-      pid = Hugh.whereis_robot(robot)
+      pid = Clover.whereis_robot(robot)
       assert Process.alive?(pid)
-      Hugh.stop_supervised_robot(robot)
+      Clover.stop_supervised_robot(robot)
       assert_down(pid)
 
       # Wait for robot to be restarted
       Process.sleep(10)
 
-      refute Hugh.whereis_robot(robot)
+      refute Clover.whereis_robot(robot)
     end
   end
 
@@ -44,18 +44,18 @@ defmodule HughTest do
     setup :start_unsupervised_robot
 
     test "starts", %{robot: robot} do
-      Hugh.Robot.send(robot, "hello")
+      Clover.Robot.send(robot, "hello")
       assert_receive {:out, "hello"}
     end
 
     test "is not started under supervisor", %{robot: robot} do
-      assert pid = Hugh.whereis_robot(robot)
+      assert pid = Clover.whereis_robot(robot)
       assert Process.alive?(pid)
-      assert [] = Supervisor.which_children(Hugh.Robots)
+      assert [] = Supervisor.which_children(Clover.Robots)
     end
 
     test "stops", %{robot: robot, robot_sup: robot_sup} do
-      pid = Hugh.whereis_robot(robot)
+      pid = Clover.whereis_robot(robot)
       assert Process.alive?(pid)
       Supervisor.stop(robot_sup)
       assert_down(pid)
@@ -63,7 +63,7 @@ defmodule HughTest do
       # Wait for robot to [not] be restarted
       Process.sleep(10)
 
-      refute Hugh.whereis_robot(robot)
+      refute Clover.whereis_robot(robot)
     end
   end
 
@@ -74,11 +74,11 @@ defmodule HughTest do
 
   def start_supervised_robot(_) do
     robot = "hugh"
-    {:ok, pid} = Hugh.start_supervised_robot(robot, TestRobot, {TestAdapter, sink: self()})
+    {:ok, pid} = Clover.start_supervised_robot(robot, TestRobot, {TestAdapter, sink: self()})
 
     on_exit(fn ->
       if Process.alive?(pid) do
-        Hugh.stop_supervised_robot(robot)
+        Clover.stop_supervised_robot(robot)
         assert_down(pid)
       end
     end)
@@ -95,7 +95,7 @@ defmodule HughTest do
     # taking down the test process.
     robot_starter =
       spawn(fn ->
-        {:ok, pid} = Hugh.start_robot(robot, TestRobot, {TestAdapter, sink: test_process})
+        {:ok, pid} = Clover.start_robot(robot, TestRobot, {TestAdapter, sink: test_process})
         send(test_process, {:robot_supervisor_pid, pid})
         Process.flag(:trap_exit, true)
 

@@ -1,4 +1,4 @@
-defmodule Hugh.User do
+defmodule Clover.User do
   @moduledoc """
   A chat user
   """

@@ -1,12 +1,12 @@
-defmodule Hugh.Adapter.Slack.Connection do
+defmodule Clover.Adapter.Slack.Connection do
   use Slack
 
-  alias Hugh.{
+  alias Clover.{
     Adapter,
     User
   }
 
-  alias Hugh.Util.Logger
+  alias Clover.Util.Logger
 
   def handle_connect(slack, state) do
     log(:debug, "connected as #{slack.me.name}")

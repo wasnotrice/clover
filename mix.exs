@@ -1,10 +1,10 @@
-defmodule Hugh.MixProject do
+defmodule Clover.MixProject do
   use Mix.Project
 
   def project do
     [
-      app: :hugh,
       version: "0.1.0",
+      app: :clover,
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -14,7 +14,7 @@ defmodule Hugh.MixProject do
 
   # Run "mix help compile.app" to learn about applications.
   def application do
-    [extra_applications: [:logger], mod: {Hugh, []}, registered: [Hugh]]
+    [extra_applications: [:logger], mod: {Clover, []}, registered: [Clover]]
   end
 
   # Run "mix help deps" to learn about dependencies.

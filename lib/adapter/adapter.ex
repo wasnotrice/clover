@@ -1,7 +1,7 @@
-defmodule Hugh.Adapter do
+defmodule Clover.Adapter do
   use GenServer
 
-  alias Hugh.{
+  alias Clover.{
     Message,
     Robot
   }
@@ -28,7 +28,7 @@ defmodule Hugh.Adapter do
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
-      @behaviour Hugh.Adapter
+      @behaviour Clover.Adapter
 
       if Code.ensure_loaded?(Supervisor) and function_exported?(Supervisor, :init, 2) do
         @doc false
@@ -75,18 +75,18 @@ defmodule Hugh.Adapter do
 
   defp call(robot_name, message) do
     robot_name
-    |> Hugh.whereis_robot_adapter()
+    |> Clover.whereis_robot_adapter()
     |> GenServer.call(message)
   end
 
   defp cast(robot_name, message) do
     robot_name
-    |> Hugh.whereis_robot_adapter()
+    |> Clover.whereis_robot_adapter()
     |> GenServer.cast(message)
   end
 
   def via_tuple(robot_name) do
-    {:via, Registry, {Hugh.registry(), {robot_name, :adapter}}}
+    {:via, Registry, {Clover.registry(), {robot_name, :adapter}}}
   end
 
   def process_suffix(adapter) do
@@ -114,7 +114,7 @@ defmodule Hugh.Adapter do
       Robot.handle_in(robot, message)
       {:noreply, state}
     else
-      log(:error, Hugh.format_error({:not_exported, {mod, "handle_in/2"}}))
+      log(:error, Clover.format_error({:not_exported, {mod, "handle_in/2"}}))
       {:noreply, state}
     end
   end
@@ -126,12 +126,12 @@ defmodule Hugh.Adapter do
       mod.handle_out({:send, message}, state)
       {:noreply, state}
     else
-      log(:warn, Hugh.format_error({:not_exported, {mod, "handle_out/2"}}))
+      log(:warn, Clover.format_error({:not_exported, {mod, "handle_out/2"}}))
       {:noreply, state}
     end
   end
 
   def log(level, message, opts \\ []) do
-    Hugh.Util.Logger.log(level, "adapter", message, opts)
+    Clover.Util.Logger.log(level, "adapter", message, opts)
   end
 end

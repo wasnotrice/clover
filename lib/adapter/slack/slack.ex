@@ -1,16 +1,16 @@
-defmodule Hugh.Adapter.Slack do
-  use Hugh.Adapter
+defmodule Clover.Adapter.Slack do
+  use Clover.Adapter
 
-  alias Hugh.Adapter
+  alias Clover.Adapter
 
   def start_link(arg, opts \\ []) do
-    Hugh.Adapter.start_link(__MODULE__, arg, opts)
+    Clover.Adapter.start_link(__MODULE__, arg, opts)
   end
 
   def init(opts, %{robot: robot} = state) do
     token = Keyword.fetch!(opts, :token)
 
-    case Slack.Bot.start_link(Hugh.Adapter.Slack.Connection, %{robot: robot}, token) do
+    case Slack.Bot.start_link(Clover.Adapter.Slack.Connection, %{robot: robot}, token) do
       {:ok, connection} ->
         Process.monitor(connection)
         {:ok, Map.put(state, :connection, connection)}
@@ -20,12 +20,12 @@ defmodule Hugh.Adapter.Slack do
     end
   end
 
-  @impl Hugh.Adapter
+  @impl Clover.Adapter
   def handle_in({:message, message}, state, context) do
     {:ok, __MODULE__.Message.from_external(message, state.robot, context), state}
   end
 
-  @impl Hugh.Adapter
+  @impl Clover.Adapter
 
   def handle_out({:send, message}, %{connection: connection}) do
     {text, channel} = __MODULE__.Message.to_external(message)

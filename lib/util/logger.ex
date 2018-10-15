@@ -1,4 +1,4 @@
-defmodule Hugh.Util.Logger do
+defmodule Clover.Util.Logger do
   require Logger
 
   @keys [:inspect]
@@ -13,7 +13,7 @@ defmodule Hugh.Util.Logger do
   end
 
   defp extract_option({key, _}, _) do
-    {:error, Hugh.Error.exception({:badarg, {__MODULE__, "log option", key, @keys}})}
+    {:error, Clover.Error.exception({:badarg, {__MODULE__, "log option", key, @keys}})}
   end
 
   def log_message(label, message, opts) do
