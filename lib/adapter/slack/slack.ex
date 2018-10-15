@@ -1,17 +1,21 @@
 defmodule Clover.Adapter.Slack do
+  @moduledoc """
+  A `Clover.Adapter` for Slack
+  """
   use Clover.Adapter
 
   alias Clover.Adapter
+  alias Slack.Bot, as: SlackBot
 
   def start_link(arg, opts \\ []) do
-    Clover.Adapter.start_link(__MODULE__, arg, opts)
+    Adapter.start_link(__MODULE__, arg, opts)
   end
 
   @doc false
   def init(opts, %{robot: robot} = state) do
     token = Keyword.fetch!(opts, :token)
 
-    case Slack.Bot.start_link(Clover.Adapter.Slack.Connection, %{robot: robot}, token) do
+    case SlackBot.start_link(Clover.Adapter.Slack.Connection, %{robot: robot}, token) do
       {:ok, connection} ->
         Process.monitor(connection)
         {:ok, Map.put(state, :connection, connection)}

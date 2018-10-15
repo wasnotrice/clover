@@ -1,4 +1,7 @@
 defmodule Clover.Adapter do
+  @moduledoc """
+  A Behaviour for `Clover` chat platform adapters.
+  """
   use GenServer
 
   alias Clover.{
@@ -121,6 +124,7 @@ defmodule Clover.Adapter do
   end
 
   defp log(level, message, opts \\ []) do
-    Clover.Util.Logger.log(level, "adapter", message, opts)
+    alias Clover.Util.Logger
+    Logger.log(level, "adapter", message, opts)
   end
 end

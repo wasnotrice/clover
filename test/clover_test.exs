@@ -2,13 +2,14 @@ defmodule CloverTest do
   use ExUnit.Case, async: false
   doctest Clover
 
+  alias Clover.Robot
   alias Clover.Test.{TestAdapter, TestRobot}
 
   describe "a supervised robot" do
     setup :start_supervised_robot
 
     test "starts", %{robot: robot} do
-      Clover.Robot.send(robot, "hello")
+      Robot.send(robot, "hello")
       assert_receive {:out, "hello"}
     end
 
@@ -44,7 +45,7 @@ defmodule CloverTest do
     setup :start_unsupervised_robot
 
     test "starts", %{robot: robot} do
-      Clover.Robot.send(robot, "hello")
+      Robot.send(robot, "hello")
       assert_receive {:out, "hello"}
     end
 
