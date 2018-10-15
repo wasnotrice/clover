@@ -33,8 +33,7 @@ defmodule Hugh.Adapter.Slack.Message do
   defp extract_mentions(text) do
     regex = ~r/<@(\w+)>/
 
-    case Regex.scan(regex, text, return: :index)
-         |> IO.inspect(label: "leading mention") do
+    case Regex.scan(regex, text, return: :index) do
       nil ->
         %{}
 
