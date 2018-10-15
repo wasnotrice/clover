@@ -10,6 +10,8 @@ defmodule Clover.MixProject do
       name: "Clover",
       description: description(),
       package: package(),
+      source_url: "https://github.com/wasnotrice/clover",
+      homepage_url: "https://github.com/wasnotrice/clover",
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
@@ -43,7 +45,12 @@ defmodule Clover.MixProject do
   def package do
     [
       licenses: ["Apache 2.0"],
-      maintainers: ["Eric Watson"]
+      maintainers: ["Eric Watson"],
+      links: %{
+        "Source" => "https://github.com/wasnotrice/clover",
+        "Issue tracker" => "https://github.com/wasnotrice/clover/issues",
+        "Homepage" => "https://github.com/wasnotrice/clover"
+      }
     ]
   end
 
