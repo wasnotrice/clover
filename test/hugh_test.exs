@@ -24,7 +24,7 @@ defmodule HughTest do
       Process.sleep(10)
 
       assert restarted_pid = Hugh.whereis_robot(robot)
-      refute restarted_pid == pid
+      assert restarted_pid != pid
     end
 
     test "stops", %{robot: robot} do
@@ -32,6 +32,11 @@ defmodule HughTest do
       assert Process.alive?(pid)
       Hugh.stop_supervised_robot(robot)
       assert_down(pid)
+
+      # Wait for robot to be restarted
+      Process.sleep(10)
+
+      refute Hugh.whereis_robot(robot)
     end
   end
 
@@ -83,13 +88,36 @@ defmodule HughTest do
 
   def start_unsupervised_robot(_) do
     robot = "doug"
-    {:ok, pid} = Hugh.start_robot(robot, TestRobot, {TestAdapter, sink: self()})
+    test_process = self()
+
+    # Spawn a process to start the robot process, so the test process isn't linked
+    # to the robot process. This makes it possible to test stopping the robot without
+    # taking down the test process.
+    robot_starter =
+      spawn(fn ->
+        {:ok, pid} = Hugh.start_robot(robot, TestRobot, {TestAdapter, sink: test_process})
+        send(test_process, {:robot_supervisor_pid, pid})
+        Process.flag(:trap_exit, true)
+
+        receive do
+          {:EXIT, from, reason} -> :ok
+        end
+      end)
+
+    # Get the robot pid from the starter process
+    pid =
+      receive do
+        {:robot_supervisor_pid, pid} -> pid
+      end
 
     on_exit(fn ->
       if Process.alive?(pid) do
-        Hugh.stop_robot(robot)
+        Supervisor.stop(pid)
         assert_down(pid)
       end
+
+      # Always clean up the starter process
+      Process.exit(robot_starter, :kill)
     end)
 
     {:ok, robot: robot, robot_sup: pid}
