@@ -27,7 +27,7 @@ defmodule Clover.Adapter.Slack do
 
   @impl Clover.Adapter
   def handle_in({:message, message}, state, context) do
-    {:ok, __MODULE__.Message.from_external(message, state.robot, context), state}
+    {:message, __MODULE__.Message.from_external(message, state.robot, context), state}
   end
 
   @impl Clover.Adapter

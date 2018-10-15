@@ -102,7 +102,11 @@ defmodule Clover do
   end
 
   def format_error({:badarg, {mod, function, arg}}) do
-    "bad argument for #{mod}.#{function}: #{arg}"
+    "bad argument for #{mod}.#{function}: #{inspect(arg)}"
+  end
+
+  def format_error({:unhandled_message, message}) do
+    "unhandled message #{inspect(message)}"
   end
 
   def format_error(reason) do

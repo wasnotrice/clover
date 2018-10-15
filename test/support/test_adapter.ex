@@ -22,6 +22,7 @@ defmodule Clover.Test.TestAdapter do
   end
 
   @impl Clover.Adapter
+  @spec handle_in({:message, String.t()}, map, any()) :: {:message, Message.t(), map}
   def handle_in({:message, text}, %{robot: robot} = state, _context) do
     message = %Message{
       robot: robot,
@@ -32,7 +33,7 @@ defmodule Clover.Test.TestAdapter do
       }
     }
 
-    {:ok, message, state}
+    {:message, message, state}
   end
 
   @impl Clover.Adapter
