@@ -18,9 +18,6 @@ defmodule Clover.Test.TestAdapter do
   end
 
   @impl Clover.Adapter
-  def process_suffix, do: "TestAdapter"
-
-  @impl Clover.Adapter
   def handle_in({:message, text}, %{robot: robot} = state, _context) do
     message = %Message{
       robot: robot,

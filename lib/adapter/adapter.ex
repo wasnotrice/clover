@@ -13,17 +13,9 @@ defmodule Clover.Adapter do
   @callback handle_out({tag :: atom, message :: Message.t()}, state :: state) ::
               {:sent, Message.t(), state}
 
-  @doc """
-  A suffix for this process's name in the local registry.
-
-  If your robot is named `:Mike`, then your adapter will be `:Mike.Adapter`.
-  """
-  @callback process_suffix :: String.t()
-
   @optional_callbacks [
     handle_in: 3,
-    handle_out: 2,
-    process_suffix: 0
+    handle_out: 2
   ]
 
   defmacro __using__(opts) do
@@ -88,14 +80,6 @@ defmodule Clover.Adapter do
 
   def via_tuple(robot_name) do
     {:via, Registry, {Clover.registry(), {robot_name, :adapter}}}
-  end
-
-  def process_suffix(adapter) do
-    if function_exported?(adapter, :process_suffix, 0) do
-      adapter.process_suffix
-    else
-      "Adapter"
-    end
   end
 
   @doc false
