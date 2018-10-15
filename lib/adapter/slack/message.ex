@@ -34,9 +34,6 @@ defmodule Hugh.Adapter.Slack.Message do
     regex = ~r/<@(\w+)>/
 
     case Regex.scan(regex, text, return: :index) do
-      nil ->
-        %{}
-
       [] ->
         %{}
 
