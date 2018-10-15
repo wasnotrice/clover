@@ -13,7 +13,8 @@ defmodule Clover.MixProject do
       elixir: "~> 1.7",
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
-      deps: deps()
+      deps: deps(),
+      docs: docs()
     ]
   end
 
@@ -43,6 +44,13 @@ defmodule Clover.MixProject do
     [
       licenses: ["Apache 2.0"],
       maintainers: ["Eric Watson"]
+    ]
+  end
+
+  def docs do
+    [
+      main: "readme",
+      extras: ["README.md"]
     ]
   end
 
