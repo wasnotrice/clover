@@ -26,7 +26,8 @@ defmodule Clover.MixProject do
 
   defp deps do
     [
-      {:gen_state_machine, "~> 2.0"}
+      {:gen_state_machine, "~> 2.0"},
+      {:ex_doc, "~> 0.19", only: :dev}
     ] ++ adapter_deps()
   end
 
