@@ -76,6 +76,10 @@ defmodule Hugh.Adapter do
     GenServer.cast(adapter, {:incoming, message, context})
   end
 
+  def via_tuple(robot_name) do
+    {:via, Registry, {Hugh.registry(), {robot_name, :adapter}}}
+  end
+
   def process_suffix(adapter) do
     if function_exported?(adapter, :process_suffix, 0) do
       adapter.process_suffix

@@ -48,55 +48,60 @@ defmodule Hugh.Robot do
     end
   end
 
-  def start_link(mod, adapter) do
-    start_link(mod, adapter, [])
+  @spec start_link(atom(), {String.t(), atom() | {atom(), any()}}) ::
+          :ignore | {:error, any()} | {:ok, pid()}
+  def start_link(mod, {name, adapter}) do
+    start_link(mod, {name, adapter}, [])
   end
 
-  def start_link(mod, adapter, opts) when is_atom(adapter) do
-    start_link(mod, {adapter, []}, opts)
+  def start_link(mod, {name, adapter}, opts) when is_atom(adapter) do
+    start_link(mod, {name, {adapter, []}}, opts)
   end
 
-  def start_link(mod, {adapter, adapter_opts}, opts) do
-    name = Keyword.get(opts, :name)
+  def start_link(mod, {name, {adapter, adapter_opts}}, opts) do
     GenStateMachine.start_link(__MODULE__, {mod, {adapter, adapter_opts}, name}, opts)
   end
 
   def init({mod, {adapter, adapter_opts}, name} = arg) do
     Process.flag(:trap_exit, true)
 
-    opts = Keyword.put(adapter_opts, :robot_name, name)
-    {:ok, adapter} = Hugh.Adapter.Supervisor.start_adapter(adapter, adapter_opts, self(), opts)
+    # opts = Keyword.put(adapter_opts, :robot_name, name)
+    # {:ok, adapter} = Hugh.Adapter.Supervisor.start_adapter(adapter, adapter_opts, self(), opts)
 
     state = :uninitialized
     {:ok, data} = mod.init(arg)
-    data = Map.merge(data, %{adapter: adapter, mod: mod})
+    data = Map.merge(data, %{adapter: adapter, mod: mod, name: name})
 
     {:ok, state, data}
   end
 
   @spec send(atom() | pid() | {atom(), any()} | {:via, atom(), any()}, any()) :: :ok
   def send(robot, message) do
-    GenStateMachine.cast(Hugh.via_tuple(robot), {:send, message})
+    GenStateMachine.cast(Hugh.whereis_robot(robot), {:send, message})
   end
 
   def name(robot) do
-    GenStateMachine.call(robot, :name)
+    GenStateMachine.call(via_tuple(robot), :name)
   end
 
   def adapter(robot) do
-    GenStateMachine.call(robot, :adapter)
+    GenStateMachine.call(via_tuple(robot), :adapter)
   end
 
   def handle_in(robot, message) do
-    GenStateMachine.cast(robot, {:incoming, message})
+    GenStateMachine.cast(via_tuple(robot), {:incoming, message})
   end
 
   def connect(robot, to: adapter) do
-    GenStateMachine.call(robot, {:connect_adapter, adapter})
+    GenStateMachine.call(via_tuple(robot), {:connect_adapter, adapter})
   end
 
   def connected(robot, connection_state) do
-    GenStateMachine.call(robot, {:connected, connection_state})
+    GenStateMachine.call(via_tuple(robot), {:connected, connection_state})
+  end
+
+  def via_tuple(name) do
+    {:via, Registry, {Hugh.registry(), name}}
   end
 
   def terminate(reason, _state, _data) do
@@ -125,8 +130,9 @@ defmodule Hugh.Robot do
     end
   end
 
-  def handle_event(:cast, {:send, text}, _state, %{adapter: adapter}) when is_binary(text) do
-    Adapter.send(adapter, text)
+  def handle_event(:cast, {:send, text}, _state, %{adapter: adapter, name: name} = data)
+      when is_binary(text) do
+    Adapter.send(Adapter.via_tuple(name), text)
     :keep_state_and_data
   end
 

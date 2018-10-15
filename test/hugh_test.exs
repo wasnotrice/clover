@@ -7,14 +7,12 @@ defmodule HughTest do
   describe "a supervised robot" do
     setup :start_supervised_robot
 
-    test "starts", %{robot: robot, pid: pid} do
+    test "starts", %{robot: robot} do
       Hugh.Robot.send(robot, "hello")
       assert_receive {:out, "hello"}
     end
 
     test "restarts", %{robot: robot} do
-      # assert [child] = Supervisor.which_children(Hugh.Robots)
-      # assert {_, ^robot, :worker, [Hugh.Test.TestRobot]} = child
       assert pid = Hugh.whereis_robot(robot)
       assert Process.alive?(pid)
 
@@ -51,13 +49,13 @@ defmodule HughTest do
       assert [] = Supervisor.which_children(Hugh.Robots)
     end
 
-    test "stops", %{robot: robot} do
+    test "stops", %{robot: robot, robot_sup: robot_sup} do
       pid = Hugh.whereis_robot(robot)
       assert Process.alive?(pid)
-      Hugh.stop_robot(robot)
+      Supervisor.stop(robot_sup)
       assert_down(pid)
 
-      # Wait for robot to be restarted
+      # Wait for robot to [not] be restarted
       Process.sleep(10)
 
       refute Hugh.whereis_robot(robot)
@@ -72,13 +70,15 @@ defmodule HughTest do
   def start_supervised_robot(_) do
     robot = "hugh"
     {:ok, pid} = Hugh.start_supervised_robot(robot, TestRobot, {TestAdapter, sink: self()})
-    IO.inspect(pid, label: "start")
 
     on_exit(fn ->
-      Hugh.stop_supervised_robot(robot)
+      if Process.alive?(pid) do
+        Hugh.stop_supervised_robot(robot)
+        assert_down(pid)
+      end
     end)
 
-    {:ok, robot: robot, pid: pid}
+    {:ok, robot: robot}
   end
 
   def start_unsupervised_robot(_) do
@@ -92,6 +92,6 @@ defmodule HughTest do
       end
     end)
 
-    {:ok, robot: robot, pid: pid}
+    {:ok, robot: robot, robot_sup: pid}
   end
 end

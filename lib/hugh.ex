@@ -23,23 +23,34 @@ defmodule Hugh do
     start_opts =
       opts
       |> Keyword.take([:timeout, :debug, :spawn_opt])
-      |> Keyword.put(:name, via_tuple(name))
 
     adapter_opts = Keyword.put(adapter_opts, :robot_name, name)
 
     DynamicSupervisor.start_child(
       robot_supervisor(),
-      mod.child_spec({adapter, adapter_opts}, start_opts)
+      Hugh.Robot.Supervisor.child_spec({name, mod, {adapter, adapter_opts}}, start_opts)
+
+      # mod.child_spec({name, {adapter, adapter_opts}}, start_opts)
     )
   end
 
+  @spec stop_supervised_robot(String.t()) :: :ok | {:error, :not_found}
   def stop_supervised_robot(robot) do
-    case Registry.lookup(@registry, robot) do
-      [{pid, _}] -> DynamicSupervisor.terminate_child(robot_supervisor(), pid)
-      [] -> :ok
+    case whereis_robot_supervisor(robot) do
+      nil -> :ok
+      pid -> DynamicSupervisor.terminate_child(robot_supervisor(), pid)
     end
   end
 
+  @doc """
+  Start a robot outside of the `Hugh` supervision tree.
+
+  The robot's pid will still be registered   in the `Hugh` registry, but the processes will not be
+  supervised by `Hugh`, and you can manage link the robot into your own supervision tree. Returns
+  the `pid` of the robot's supervisor.
+
+  To stop the robot, call `Supervisor.stop(pid)`.
+  """
   def start_robot(name, mod, adapter) do
     start_robot(name, mod, adapter, [])
   end
@@ -48,17 +59,13 @@ defmodule Hugh do
     start_opts =
       opts
       |> Keyword.take([:timeout, :debug, :spawn_opt])
-      |> Keyword.put(:name, via_tuple(name))
 
     adapter_opts = Keyword.put(adapter_opts, :robot_name, :name)
-    Hugh.Robot.start_link(mod, {adapter, adapter_opts}, start_opts)
+    IO.inspect({name, mod, {adapter, adapter_opts}, start_opts}, label: "hugh.start_robot")
+    Hugh.Robot.Supervisor.start_link({name, mod, {adapter, adapter_opts}}, start_opts)
   end
 
-  def stop_robot(robot) do
-    robot
-    |> whereis_robot()
-    |> Process.exit(:stop)
-  end
+  def registry, do: @registry
 
   def whereis_robot(robot) do
     case Registry.lookup(@registry, robot) do
@@ -67,7 +74,33 @@ defmodule Hugh do
     end
   end
 
-  def via_tuple(name), do: {:via, Registry, {@registry, name}}
+  def whereis_robot_supervisor(robot) do
+    case whereis_robot(robot) do
+      nil ->
+        nil
+
+      pid ->
+        robot_supervisor()
+        |> DynamicSupervisor.which_children()
+        |> find_supervisor_for_robot(pid)
+    end
+  end
+
+  defp find_supervisor_for_robot(supervisors, robot_pid) do
+    supervisors
+    |> Enum.find(fn child ->
+      child
+      |> child_pid()
+      |> Supervisor.which_children()
+      |> Enum.find(fn child -> child_pid(child) == robot_pid end)
+    end)
+    |> case do
+      nil -> nil
+      child -> child_pid(child)
+    end
+  end
+
+  defp child_pid({_, pid, _, _}), do: pid
 
   def robot_supervisor, do: Hugh.Robots
 
