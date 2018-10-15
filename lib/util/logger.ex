@@ -1,4 +1,5 @@
 defmodule Clover.Util.Logger do
+  @moduledoc false
   require Logger
 
   @keys [:inspect]

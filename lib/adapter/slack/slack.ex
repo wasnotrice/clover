@@ -7,6 +7,7 @@ defmodule Clover.Adapter.Slack do
     Clover.Adapter.start_link(__MODULE__, arg, opts)
   end
 
+  @doc false
   def init(opts, %{robot: robot} = state) do
     token = Keyword.fetch!(opts, :token)
 
