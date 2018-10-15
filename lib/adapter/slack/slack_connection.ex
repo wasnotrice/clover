@@ -1,4 +1,6 @@
 defmodule Clover.Adapter.Slack.Connection do
+  @moduledoc false
+
   use Slack
 
   alias Clover.{

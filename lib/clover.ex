@@ -1,6 +1,6 @@
 defmodule Clover do
   @moduledoc """
-  Documentation for Clover.
+  The Clover application
   """
 
   use Application
@@ -8,6 +8,7 @@ defmodule Clover do
   @registry Clover.Registry
   @robot_supervisor Clover.Robots
 
+  @doc false
   def start(_type, _args) do
     Clover.Supervisor.start_link(@robot_supervisor, name: Clover.App)
   end
@@ -95,6 +96,7 @@ defmodule Clover do
 
   defp child_pid({_, pid, _, _}), do: pid
 
+  @doc false
   def format_error({:not_exported, {mod, function}}) do
     "#{mod} does not export function #{function}"
   end

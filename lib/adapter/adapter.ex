@@ -50,6 +50,7 @@ defmodule Clover.Adapter do
     GenServer.start_link(__MODULE__, {mod, robot, arg}, opts)
   end
 
+  @doc false
   def init({mod, robot, arg}) do
     state = %{
       mod: mod,
@@ -97,17 +98,20 @@ defmodule Clover.Adapter do
     end
   end
 
+  @doc false
   def handle_call({:connect_robot, robot}, _from, state) do
     new_state = Map.put(state, :robot, robot)
     {:reply, :ok, new_state}
   end
 
+  @doc false
   def handle_call({:connected, connection_state}, _from, %{robot: robot} = state) do
     log(:debug, "connected", inspect: connection_state)
     Robot.connected(robot, connection_state)
     {:reply, :ok, state}
   end
 
+  @doc false
   def handle_cast({:incoming, message, context}, %{mod: mod, robot: robot} = state) do
     if function_exported?(mod, :handle_in, 3) do
       {:ok, message, state} = mod.handle_in({:message, message}, state, context)
@@ -119,6 +123,7 @@ defmodule Clover.Adapter do
     end
   end
 
+  @doc false
   def handle_cast({:send, message}, %{mod: mod} = state) do
     if function_exported?(mod, :handle_out, 2) do
       log(:debug, "Adapter calling #{mod}.handle_out(#{inspect(message)}, #{inspect(state)})")
@@ -131,7 +136,7 @@ defmodule Clover.Adapter do
     end
   end
 
-  def log(level, message, opts \\ []) do
+  defp log(level, message, opts \\ []) do
     Clover.Util.Logger.log(level, "adapter", message, opts)
   end
 end
