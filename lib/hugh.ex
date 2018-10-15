@@ -20,17 +20,11 @@ defmodule Hugh do
   end
 
   def start_supervised_robot(name, mod, {adapter, adapter_opts}, opts) do
-    start_opts =
-      opts
-      |> Keyword.take([:timeout, :debug, :spawn_opt])
-
-    adapter_opts = Keyword.put(adapter_opts, :robot_name, name)
+    start_opts = Keyword.take(opts, [:timeout, :debug, :spawn_opt])
 
     DynamicSupervisor.start_child(
       robot_supervisor(),
       Hugh.Robot.Supervisor.child_spec({name, mod, {adapter, adapter_opts}}, start_opts)
-
-      # mod.child_spec({name, {adapter, adapter_opts}}, start_opts)
     )
   end
 
@@ -56,12 +50,7 @@ defmodule Hugh do
   end
 
   def start_robot(name, mod, {adapter, adapter_opts}, opts) do
-    start_opts =
-      opts
-      |> Keyword.take([:timeout, :debug, :spawn_opt])
-
-    adapter_opts = Keyword.put(adapter_opts, :robot_name, :name)
-    IO.inspect({name, mod, {adapter, adapter_opts}, start_opts}, label: "hugh.start_robot")
+    start_opts = Keyword.take(opts, [:timeout, :debug, :spawn_opt])
     Hugh.Robot.Supervisor.start_link({name, mod, {adapter, adapter_opts}}, start_opts)
   end
 
@@ -69,6 +58,13 @@ defmodule Hugh do
 
   def whereis_robot(robot) do
     case Registry.lookup(@registry, robot) do
+      [{pid, _}] -> pid
+      [] -> nil
+    end
+  end
+
+  def whereis_robot_adapter(robot) do
+    case Registry.lookup(@registry, {robot, :adapter}) do
       [{pid, _}] -> pid
       [] -> nil
     end

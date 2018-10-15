@@ -3,27 +3,28 @@ defmodule Hugh.RobotTest do
 
   alias Hugh.Test.{TestAdapter, TestRobot}
   alias Hugh.{Adapter, Robot, User}
+  alias Hugh.Robot.Supervisor, as: RobotSupervisor
 
   setup do
-    robot = start_supervised!(TestRobot.child_spec({TestAdapter, sink: self()}, name: Doug))
-
-    adapter = Robot.adapter(robot)
-    {:ok, robot: robot, adapter: adapter}
+    name = "doug"
+    child_spec = RobotSupervisor.child_spec({name, TestRobot, {TestAdapter, sink: self()}}, [])
+    _pid = start_supervised!(child_spec)
+    {:ok, name: name}
   end
 
-  test "robot responds to message", %{adapter: adapter} do
-    Adapter.incoming(adapter, "ping", %{})
+  test "robot responds to message", %{name: name} do
+    Adapter.incoming(name, "ping", %{})
     assert_receive({:out, "pong"})
   end
 
-  test "robot sends message", %{robot: robot} do
-    Robot.send(robot, "goodbye")
+  test "robot sends message", %{name: name} do
+    Robot.send(name, "goodbye")
     assert_receive({:out, "goodbye"})
   end
 
-  test "robot receives name", %{robot: robot, adapter: adapter} do
-    robot_user = %User{id: "doug", name: "doug"}
-    Adapter.connected(adapter, %{me: robot_user})
-    assert Robot.name(robot) == "doug"
+  test "robot receives name", %{name: robot_name} do
+    robot_user = %User{id: "alice", name: "alice"}
+    Adapter.connected(robot_name, %{me: robot_user})
+    assert Robot.name(robot_name) == "alice"
   end
 end

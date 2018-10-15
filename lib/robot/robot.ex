@@ -50,54 +50,56 @@ defmodule Hugh.Robot do
 
   @spec start_link(atom(), {String.t(), atom() | {atom(), any()}}) ::
           :ignore | {:error, any()} | {:ok, pid()}
-  def start_link(mod, {name, adapter}) do
-    start_link(mod, {name, adapter}, [])
+  def start_link(mod, name) do
+    start_link(mod, name, [])
   end
 
-  def start_link(mod, {name, adapter}, opts) when is_atom(adapter) do
-    start_link(mod, {name, {adapter, []}}, opts)
+  def start_link(mod, name, opts) do
+    GenStateMachine.start_link(__MODULE__, {mod, name}, opts)
   end
 
-  def start_link(mod, {name, {adapter, adapter_opts}}, opts) do
-    GenStateMachine.start_link(__MODULE__, {mod, {adapter, adapter_opts}, name}, opts)
-  end
-
-  def init({mod, {adapter, adapter_opts}, name} = arg) do
+  def init({mod, name} = arg) do
     Process.flag(:trap_exit, true)
 
-    # opts = Keyword.put(adapter_opts, :robot_name, name)
-    # {:ok, adapter} = Hugh.Adapter.Supervisor.start_adapter(adapter, adapter_opts, self(), opts)
-
     state = :uninitialized
-    {:ok, data} = mod.init(arg)
-    data = Map.merge(data, %{adapter: adapter, mod: mod, name: name})
+
+    data = %{
+      mod: mod,
+      name: name
+    }
+
+    {:ok, data} = mod.init(arg, data)
 
     {:ok, state, data}
   end
 
   @spec send(atom() | pid() | {atom(), any()} | {:via, atom(), any()}, any()) :: :ok
-  def send(robot, message) do
-    GenStateMachine.cast(Hugh.whereis_robot(robot), {:send, message})
+  def send(robot_name, message) do
+    cast(robot_name, {:send, message})
   end
 
-  def name(robot) do
-    GenStateMachine.call(via_tuple(robot), :name)
+  def name(robot_name) do
+    call(robot_name, :name)
   end
 
-  def adapter(robot) do
-    GenStateMachine.call(via_tuple(robot), :adapter)
+  def handle_in(robot_name, message) do
+    cast(robot_name, {:incoming, message})
   end
 
-  def handle_in(robot, message) do
-    GenStateMachine.cast(via_tuple(robot), {:incoming, message})
+  def connected(robot_name, connection_state) do
+    call(robot_name, {:connected, connection_state})
   end
 
-  def connect(robot, to: adapter) do
-    GenStateMachine.call(via_tuple(robot), {:connect_adapter, adapter})
+  defp call(robot_name, message) do
+    robot_name
+    |> Hugh.whereis_robot()
+    |> GenServer.call(message)
   end
 
-  def connected(robot, connection_state) do
-    GenStateMachine.call(via_tuple(robot), {:connected, connection_state})
+  defp cast(robot_name, message) do
+    robot_name
+    |> Hugh.whereis_robot()
+    |> GenServer.cast(message)
   end
 
   def via_tuple(name) do
@@ -108,7 +110,7 @@ defmodule Hugh.Robot do
     log(:error, "terminate", inspect: reason)
   end
 
-  def handle_event(:cast, {:incoming, message}, _state, %{mod: mod, adapter: adapter} = data) do
+  def handle_event(:cast, {:incoming, message}, _state, %{mod: mod, name: name} = data) do
     log(:debug, "message", inspect: message)
 
     handlers =
@@ -118,7 +120,7 @@ defmodule Hugh.Robot do
 
     case handle_message(message, data, handlers) do
       {:send, message, new_data} ->
-        Adapter.send(adapter, message)
+        Adapter.send(name, message)
         {:keep_state, new_data}
 
       {:noreply, new_data} ->
@@ -130,16 +132,10 @@ defmodule Hugh.Robot do
     end
   end
 
-  def handle_event(:cast, {:send, text}, _state, %{adapter: adapter, name: name} = data)
+  def handle_event(:cast, {:send, text}, _state, %{name: name} = data)
       when is_binary(text) do
-    Adapter.send(Adapter.via_tuple(name), text)
+    Adapter.send(name, text)
     :keep_state_and_data
-  end
-
-  def handle_event({:call, from}, {:connect_adapter, adapter}, _state, data) do
-    :ok = Adapter.connect(adapter, to: self())
-    new_data = Map.put(data, :adapter, adapter)
-    {:next_state, :connecting, new_data, [{:reply, from, :ok}]}
   end
 
   def handle_event({:call, from}, {:connected, connection_state}, _state, %{mod: mod} = data) do
@@ -159,10 +155,6 @@ defmodule Hugh.Robot do
     else
       {:next_state, :connected, data, [{:reply, from, :ok}]}
     end
-  end
-
-  def handle_event({:call, from}, :adapter, _state, %{adapter: adapter}) do
-    {:keep_state_and_data, [{:reply, from, adapter}]}
   end
 
   def handle_event({:call, from}, :name, _state, data) do

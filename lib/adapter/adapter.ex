@@ -57,23 +57,32 @@ defmodule Hugh.Adapter do
     }
 
     {:ok, state} = mod.init(arg, state)
+
     {:ok, state}
   end
 
-  def connect(adapter, to: robot) do
-    GenServer.call(adapter, {:connect_robot, robot})
+  def connected(robot_name, state) do
+    call(robot_name, {:connected, state})
   end
 
-  def connected(adapter, state) do
-    GenServer.call(adapter, {:connected, state})
+  def send(robot_name, message) do
+    cast(robot_name, {:send, message})
   end
 
-  def send(adapter, message) do
-    GenServer.cast(adapter, {:send, message})
+  def incoming(robot_name, message, context) do
+    cast(robot_name, {:incoming, message, context})
   end
 
-  def incoming(adapter, message, context) do
-    GenServer.cast(adapter, {:incoming, message, context})
+  defp call(robot_name, message) do
+    robot_name
+    |> Hugh.whereis_robot_adapter()
+    |> GenServer.call(message)
+  end
+
+  defp cast(robot_name, message) do
+    robot_name
+    |> Hugh.whereis_robot_adapter()
+    |> GenServer.cast(message)
   end
 
   def via_tuple(robot_name) do

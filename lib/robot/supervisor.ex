@@ -5,19 +5,13 @@ defmodule Hugh.Robot.Supervisor do
   }
 
   def start_link({name, robot_mod, {adapter, adapter_opts}}, opts) do
-    Supervisor.start_link(__MODULE__, {{robot_mod, name}, {adapter, adapter_opts}}, opts)
+    Supervisor.start_link(__MODULE__, {name, robot_mod, {adapter, adapter_opts}}, opts)
   end
 
-  def init({{robot_mod, robot_name}, {adapter, adapter_opts}} = arg) do
-    IO.inspect(arg, label: "robot.sup.init")
-
+  def init({name, robot_mod, {adapter, adapter_opts}}) do
     children = [
-      robot_mod.child_spec({robot_name, {adapter, adapter_opts}},
-        name: Robot.via_tuple(robot_name)
-      ),
-      adapter.child_spec({robot_name, adapter_opts},
-        name: Adapter.via_tuple(robot_name)
-      )
+      robot_mod.child_spec(name, name: Robot.via_tuple(name)),
+      adapter.child_spec({name, adapter_opts}, name: Adapter.via_tuple(name))
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

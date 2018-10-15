@@ -5,8 +5,8 @@ defmodule Hugh.Test.TestRobot do
     MessageHandler
   }
 
-  def init(_arg) do
-    {:ok, %{}}
+  def init(_arg, data) do
+    {:ok, data}
   end
 
   def start_link(arg, opts \\ []) do

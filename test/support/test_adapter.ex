@@ -11,10 +11,9 @@ defmodule Hugh.Test.TestAdapter do
     Hugh.Adapter.start_link(__MODULE__, {robot, adapter_opts}, opts)
   end
 
-  def init(opts, state) do
+  def init(opts, %{robot: robot} = state) do
     sink = Keyword.fetch!(opts, :sink)
-    adapter = self()
-    spawn(fn -> Adapter.connected(adapter, %{me: %User{id: "test", name: "test"}}) end)
+    spawn(fn -> Adapter.connected(robot, %{me: %User{id: "test", name: "test"}}) end)
     {:ok, Map.merge(state, %{sink: sink})}
   end
 

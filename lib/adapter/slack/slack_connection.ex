@@ -18,7 +18,7 @@ defmodule Hugh.Adapter.Slack.Connection do
       }
     }
 
-    Adapter.connected(state.adapter, connection_state)
+    Adapter.connected(state.robot, connection_state)
     {:ok, state}
   end
 
@@ -28,7 +28,7 @@ defmodule Hugh.Adapter.Slack.Connection do
   end
 
   def handle_event(message = %{type: "message"}, slack, state) do
-    Adapter.incoming(state.adapter, message, slack)
+    Adapter.incoming(state.robot, message, slack)
     {:ok, state}
   end
 
