@@ -1,6 +1,9 @@
-# Clover
+![version badge](https://img.shields.io/hexpm/v/clover.svg?style=for-the-badge)
+![ci badge](https://img.shields.io/circleci/project/github/wasnotrice/clover/master.svg?style=for-the-badge)
+![code coverage badge](https://img.shields.io/coveralls/github/wasnotrice/clover/master.svg?style=for-the-badge)
+![license badge](https://img.shields.io/github/license/wasnotrice/clover.svg?style=for-the-badge)
 
-A chat bot framework for Elixir applications
+# Clover
 
 Clover is a framework for building chat bots in Elixir. It takes inspiration from [Hubot](https://hubot.github.com/) and [Hedwig](https://github.com/hedwig-im/hedwig). Like Hubot and Hedwig, Clover:
 
