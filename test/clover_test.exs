@@ -101,7 +101,7 @@ defmodule CloverTest do
         Process.flag(:trap_exit, true)
 
         receive do
-          {:EXIT, from, reason} -> :ok
+          {:EXIT, ^pid, _reason} -> :ok
         end
       end)
 
