@@ -105,7 +105,7 @@ defmodule Clover.Robot do
   end
 
   def terminate(reason, _state, _data) do
-    log(:error, "terminate", inspect: reason)
+    log(:info, "terminate", inspect: reason)
   end
 
   @doc false

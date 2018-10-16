@@ -39,7 +39,7 @@ jobs:
           paths:
             - deps
             - ~/.mix
-        - save_cache:
+      - save_cache:
           key: v1-mix-cache
           paths:
             - deps
@@ -99,6 +99,15 @@ jobs:
       - store_test_results: # upload junit test results for display in Test Summary
           path: _build/test/lib/clover
 
+  coverage:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run:
+          name: Code coverage
+          command: mix coveralls.circle
+
 workflows:
   version: 2
   continuous_integration:
@@ -113,3 +122,7 @@ workflows:
       - test:
           requires:
             - build
+      - coverage:
+          requires:
+            - build
+            - test
