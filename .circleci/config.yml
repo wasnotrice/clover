@@ -25,28 +25,47 @@ jobs:
           keys:
             - v1-build-cache-{{ .Branch }}
             - v1-build-cache
+      - restore_cache:
+          keys:
+            - v1-plt-cache-{{ checksum "mix.lock" }}
+            - v1-plt-cache
 
       - run: mix do deps.get, compile # get updated dependencies & compile them, warnings ok
 
-      - save_cache: # generate and store mix cache
+      # Cache deps
+      - save_cache:
           key: v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
           paths: "deps"
-      - save_cache: # make another, less specific cache
+      - save_cache:
           key: v1-mix-cache-{{ .Branch }}
           paths: "deps"
-      - save_cache: # you should really save one more cache (just in case)
+      - save_cache:
           key: v1-mix-cache
           paths: "deps"
-      - save_cache: # don't forget to save a *build* cache, too
+
+      # Cache build
+      - save_cache:
           key: v1-build-cache-{{ .Branch }}
           paths: "_build"
-      - save_cache: # and one more build cache for good measure
+      - save_cache:
           key: v1-build-cache
           paths: "_build"
 
       - run: mix compile --warnings-as-errors
       - run: mix credo --strict
       - run: mix dialyzer --halt-exit-status
+
+      # Cache dialyzer PLT
+      - save_cache:
+          key: v1-plt-cache-{{ checksum "mix.lock" }}
+          paths: "_build"
+      - save_cache:
+          key: v1-plt-cache-{{ .Branch }}
+          paths: "_build"
+      - save_cache:
+          key: v1-plt-cache
+          paths: "_build"
+
       - run: mix test
 
       - store_test_results: # upload junit test results for display in Test Summary
