@@ -26,6 +26,8 @@ defmodule Clover.Test.TestRobot do
   def message_handlers do
     [
       pong(),
+      pid(),
+      crash(),
       echo()
     ]
   end
@@ -35,6 +37,24 @@ defmodule Clover.Test.TestRobot do
       match: ~r/^ping$/,
       respond: fn message, data ->
         {:send, Map.put(message, :text, "pong"), data}
+      end
+    }
+  end
+
+  defp pid do
+    %MessageHandler{
+      match: ~r/^pid$/,
+      respond: fn message, data ->
+        {:send, Map.put(message, :text, inspect(self())), data}
+      end
+    }
+  end
+
+  defp crash do
+    %MessageHandler{
+      match: ~r/^crash$/,
+      respond: fn _message, _data ->
+        raise "CRASH!"
       end
     }
   end

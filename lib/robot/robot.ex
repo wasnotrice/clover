@@ -18,6 +18,7 @@ defmodule Clover.Robot do
     User
   }
 
+  alias Clover.Robot.MessageSupervisor
   alias Clover.Util.Logger
 
   @type state :: :normal
@@ -111,24 +112,8 @@ defmodule Clover.Robot do
   @doc false
   def handle_event(:cast, {:incoming, message}, _state, %{mod: mod, name: name} = data) do
     log(:debug, "message", inspect: message)
-
-    handlers =
-      if function_exported?(mod, :message_handlers, 0),
-        do: mod.message_handlers(),
-        else: []
-
-    case handle_message(message, data, handlers) do
-      {:send, message, new_data} ->
-        Adapter.send(name, message)
-        {:keep_state, new_data}
-
-      {:noreply, new_data} ->
-        {:keep_state, new_data}
-
-      bad_return ->
-        _ = log(:warn, "bad return from #{mod}.handle_message/2: #{inspect(bad_return)}")
-        :keep_state_and_data
-    end
+    {:ok, _worker} = MessageSupervisor.dispatch(name, mod, data, message)
+    :keep_state_and_data
   end
 
   @doc false
@@ -167,19 +152,6 @@ defmodule Clover.Robot do
   @doc false
   def handle_event(_type, _event, _state, _data) do
     :keep_state_and_data
-  end
-
-  defp handle_message(_message, data, []), do: {:noreply, data}
-
-  defp handle_message(message, data, [handler | tail]) do
-    case MessageHandler.handle(handler, message, data) do
-      {mode, message, data} ->
-        {mode, message, data}
-
-      _ ->
-        log(:debug, "no handler match", inspect: handler)
-        handle_message(message, data, tail)
-    end
   end
 
   defp log(level, message, opts \\ []) do

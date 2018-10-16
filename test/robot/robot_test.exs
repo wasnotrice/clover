@@ -5,6 +5,8 @@ defmodule Clover.RobotTest do
   alias Clover.{Adapter, Robot, User}
   alias Clover.Robot.Supervisor, as: RobotSupervisor
 
+  import ExUnit.CaptureLog
+
   setup do
     name = "doug"
     child_spec = RobotSupervisor.child_spec({name, TestRobot, {TestAdapter, sink: self()}}, [])
@@ -26,5 +28,36 @@ defmodule Clover.RobotTest do
     robot_user = %User{id: "alice", name: "alice"}
     Adapter.connected(robot_name, %{me: robot_user})
     assert Robot.name(robot_name) == "alice"
+  end
+
+  test "messages are handled in separate processes", %{name: name} do
+    Adapter.incoming(name, "pid", %{})
+    assert_receive({:out, pid})
+    refute pid_from_string(pid) == Clover.whereis_robot(name)
+  end
+
+  test "crash in message handler doesn't crash robot", %{name: name} do
+    robot = Clover.whereis_robot(name)
+
+    capture_log(fn ->
+      Adapter.incoming(name, "crash", %{})
+    end)
+
+    Process.sleep(10)
+    assert Clover.whereis_robot(name) == robot
+  end
+
+  # https://github.com/koudelka/visualixir/blob/master/lib/visualixir/tracer.ex
+  def pid_from_string("#PID" <> string) do
+    string
+    |> :erlang.binary_to_list()
+    |> :erlang.list_to_pid()
+  end
+
+  def pid_from_string(string) do
+    string
+    |> :erlang.binary_to_list()
+    |> :erlang.list_to_atom()
+    |> :erlang.whereis()
   end
 end
