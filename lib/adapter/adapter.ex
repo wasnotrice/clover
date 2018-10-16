@@ -1,4 +1,7 @@
 defmodule Clover.Adapter do
+  @moduledoc """
+  A Behaviour for `Clover` chat platform adapters.
+  """
   use GenServer
 
   alias Clover.{
@@ -8,7 +11,7 @@ defmodule Clover.Adapter do
 
   @type state :: map
 
-  @callback handle_in({tag :: atom, message :: Message.t()}, state :: state, context :: map) ::
+  @callback handle_in({tag :: atom, any()}, state :: state, context :: map) ::
               {:message, Message.t(), state}
   @callback handle_out({tag :: atom, message :: Message.t()}, state :: state) ::
               {:sent, Message.t(), state}
@@ -98,9 +101,14 @@ defmodule Clover.Adapter do
   @doc false
   def handle_cast({:incoming, message, context}, %{mod: mod, robot: robot} = state) do
     if function_exported?(mod, :handle_in, 3) do
-      {:ok, message, state} = mod.handle_in({:message, message}, state, context)
-      Robot.handle_in(robot, message)
-      {:noreply, state}
+      case mod.handle_in({:message, message}, state, context) do
+        {:message, message, state} ->
+          Robot.handle_in(robot, message)
+          {:noreply, state}
+
+        _ ->
+          log(:error, Clover.format_error({:unhandled_message, message}))
+      end
     else
       log(:error, Clover.format_error({:not_exported, {mod, "handle_in/2"}}))
       {:noreply, state}
@@ -121,6 +129,7 @@ defmodule Clover.Adapter do
   end
 
   defp log(level, message, opts \\ []) do
-    Clover.Util.Logger.log(level, "adapter", message, opts)
+    alias Clover.Util.Logger
+    Logger.log(level, "adapter", message, opts)
   end
 end

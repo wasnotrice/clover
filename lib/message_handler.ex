@@ -1,4 +1,8 @@
 defmodule Clover.MessageHandler do
+  @moduledoc """
+  A data structure for handling `Clover.Message`s
+  """
+
   alias Clover.{
     User
   }

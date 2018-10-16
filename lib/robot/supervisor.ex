@@ -1,4 +1,6 @@
 defmodule Clover.Robot.Supervisor do
+  @moduledoc false
+
   alias Clover.{
     Adapter,
     Robot

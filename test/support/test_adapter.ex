@@ -1,4 +1,8 @@
 defmodule Clover.Test.TestAdapter do
+  @moduledoc """
+  A `Clover.Adapter` implementation for testing
+  """
+
   use Clover.Adapter
 
   alias Clover.{
@@ -8,7 +12,7 @@ defmodule Clover.Test.TestAdapter do
   }
 
   def start_link({robot, adapter_opts}, opts \\ []) do
-    Clover.Adapter.start_link(__MODULE__, {robot, adapter_opts}, opts)
+    Adapter.start_link(__MODULE__, {robot, adapter_opts}, opts)
   end
 
   def init(opts, %{robot: robot} = state) do
@@ -18,6 +22,7 @@ defmodule Clover.Test.TestAdapter do
   end
 
   @impl Clover.Adapter
+  @spec handle_in({:message, String.t()}, map, any()) :: {:message, Message.t(), map}
   def handle_in({:message, text}, %{robot: robot} = state, _context) do
     message = %Message{
       robot: robot,
@@ -28,7 +33,7 @@ defmodule Clover.Test.TestAdapter do
       }
     }
 
-    {:ok, message, state}
+    {:message, message, state}
   end
 
   @impl Clover.Adapter

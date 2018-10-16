@@ -2,6 +2,8 @@ defmodule Clover.Util.Logger do
   @moduledoc false
   require Logger
 
+  alias Clover.Error
+
   @keys [:inspect]
 
   def log(level, label, message, opts \\ []) do
@@ -14,7 +16,7 @@ defmodule Clover.Util.Logger do
   end
 
   defp extract_option({key, _}, _) do
-    {:error, Clover.Error.exception({:badarg, {__MODULE__, "log option", key, @keys}})}
+    {:error, Error.exception({:badarg, {__MODULE__, "log option", key, @keys}})}
   end
 
   def log_message(label, message, opts) do

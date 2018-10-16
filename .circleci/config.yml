@@ -1,0 +1,105 @@
+version: 2
+defaults: &defaults
+  working_directory: ~/clover
+  parallelism: 1
+  docker:
+    # When updating elixir version, bump cache version number
+    - image: circleci/elixir:1.7
+      environment:
+        MIX_ENV: test
+
+jobs:
+  build:
+    <<: *defaults
+    steps:
+      - checkout
+
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
+
+      - restore_cache: # restores saved mix cache
+          keys: # list of cache keys, in decreasing specificity
+            - v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - v1-mix-cache-{{ .Branch }}
+            - v1-mix-cache
+      - restore_cache: # restores saved build cache
+          keys:
+            - v1-build-cache-{{ .Branch }}
+            - v1-build-cache
+
+      - run: mix do deps.get, compile # get updated dependencies & compile them, warnings ok
+
+      # Cache deps
+      - save_cache:
+          key: v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          paths: "deps"
+      - save_cache:
+          key: v1-mix-cache-{{ .Branch }}
+          paths: "deps"
+      - save_cache:
+          key: v1-mix-cache
+          paths: "deps"
+
+      # Cache build
+      - save_cache:
+          key: v1-build-cache-{{ .Branch }}
+          paths: "_build"
+      - save_cache:
+          key: v1-build-cache
+          paths: "_build"
+
+      - run: mix compile --warnings-as-errors
+
+      - persist_to_workspace:
+          root: ~/
+          paths:
+            - clover
+            - .mix
+
+  credo:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run: mix credo --strict
+
+  dialyzer:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+      - restore_cache:
+          keys:
+            - v1-plt-cache-{{ checksum "mix.lock" }}
+            - v1-plt-cache
+      - run: mix dialyzer --halt-exit-status
+      - save_cache:
+          key: v1-plt-cache-{{ checksum "mix.lock" }}
+          paths:
+            - _build
+            - ~/.mix
+
+  test:
+    <<: *defaults
+    steps:
+      - attach_workspace:
+          at: ~/
+      - run: mix test
+
+      - store_test_results: # upload junit test results for display in Test Summary
+          path: _build/test/lib/clover
+
+workflows:
+  version: 2
+  continuous_integration:
+    jobs:
+      - build
+      - credo:
+          requires:
+            - build
+      - dialyzer:
+          requires:
+            - build
+      - test:
+          requires:
+            - build

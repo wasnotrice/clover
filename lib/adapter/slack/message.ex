@@ -1,4 +1,7 @@
 defmodule Clover.Adapter.Slack.Message do
+  @moduledoc """
+  Conversion functions for transforming Slack messages into Clover messages and vice versa.
+  """
   @behaviour Clover.Adapter.Message
 
   alias Clover.{
