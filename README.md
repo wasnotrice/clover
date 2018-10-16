@@ -27,6 +27,18 @@ Planned features for Clover:
 - maintains "room state", so your robot can carry on conversations
 - handles messages in their own worker processes
 
+## Installation
+
+The package can be installed by adding `clover` to your list of dependencies in `mix.exs`:
+
+```elixir
+def deps do
+  [
+    {:clover, "~> 0.1.0"}
+  ]
+end
+```
+
 ## Creating your robot
 
 _Coming soon. See the [Test Robot](test/support/test_robot.ex) for an example._
@@ -56,19 +68,3 @@ The individual robot and adapter processes will still be supervised by a `Clover
 ## Adapters
 
 Clover is designed to support multiple chat platforms through adapters. Currently, there is a test adapter bundled with Clover, and a Slack adapter (which is also bundled with Clover, but will be pulled out in the future).
-
-## Installation
-
-The package can be installed by adding `clover` to your list of dependencies in `mix.exs`:
-
-```elixir
-def deps do
-  [
-    {:clover, "~> 0.1.0"}
-  ]
-end
-```
-
-Documentation can be generated with [ExDoc](https://github.com/elixir-lang/ex_doc)
-and published on [HexDocs](https://hexdocs.pm). Once published, the docs can
-be found at [https://hexdocs.pm/clover](https://hexdocs.pm/clover).
