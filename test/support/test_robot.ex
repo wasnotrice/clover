@@ -1,8 +1,13 @@
 defmodule Clover.Test.TestRobot do
+  @moduledoc """
+  A `Clover.Robot` implementation for testing
+  """
+
   use Clover.Robot
 
   alias Clover.{
-    MessageHandler
+    MessageHandler,
+    Robot
   }
 
   def init(_arg, data) do
@@ -10,7 +15,7 @@ defmodule Clover.Test.TestRobot do
   end
 
   def start_link(arg, opts \\ []) do
-    Clover.Robot.start_link(__MODULE__, arg, opts)
+    Robot.start_link(__MODULE__, arg, opts)
   end
 
   def handle_connected(connection_state, data) do
@@ -44,6 +49,7 @@ defmodule Clover.Test.TestRobot do
   end
 
   defp log(level, message, opts) do
-    Clover.Util.Logger.log(level, "test robot", message, opts)
+    alias Clover.Util.Logger
+    Logger.log(level, "test robot", message, opts)
   end
 end

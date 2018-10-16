@@ -29,7 +29,7 @@ defmodule Clover.Adapter.Slack.Connection do
     {:ok, state}
   end
 
-  def handle_event(message = %{type: "message"}, slack, state) do
+  def handle_event(%{type: "message"} = message, slack, state) do
     Adapter.incoming(state.robot, message, slack)
     {:ok, state}
   end

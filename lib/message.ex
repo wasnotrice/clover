@@ -17,9 +17,9 @@ defmodule Clover.Message do
   @type t :: %__MODULE__{
           mentions: mentions(),
           robot: String.t(),
-          room: String.t(),
+          room: String.t() | nil,
           text: String.t(),
-          type: String.t(),
+          type: String.t() | nil,
           user: User.t()
         }
 end
