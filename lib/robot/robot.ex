@@ -14,7 +14,6 @@ defmodule Clover.Robot do
 
   alias Clover.{
     Adapter,
-    Message,
     MessageHandler,
     User
   }
@@ -133,7 +132,7 @@ defmodule Clover.Robot do
   end
 
   @doc false
-  def handle_event(:cast, {:send, text}, _state, %{name: name} = data)
+  def handle_event(:cast, {:send, text}, _state, %{name: name})
       when is_binary(text) do
     Adapter.send(name, text)
     :keep_state_and_data
