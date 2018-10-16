@@ -14,9 +14,6 @@ jobs:
     steps:
       - checkout
 
-      - run: mix local.hex --force
-      - run: mix local.rebar --force
-
       - restore_cache: # restores saved mix cache
           keys: # list of cache keys, in decreasing specificity
             - v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
@@ -27,28 +24,36 @@ jobs:
             - v1-build-cache-{{ .Branch }}
             - v1-build-cache
 
+      - run: mix local.hex --force
+      - run: mix local.rebar --force
       - run: mix do deps.get, compile # get updated dependencies & compile them, warnings ok
 
       # Cache deps
       - save_cache:
           key: v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
-          paths: "deps"
+          paths:
+            - deps
+            - ~/.mix
       - save_cache:
           key: v1-mix-cache-{{ .Branch }}
-          paths: "deps"
-      - save_cache:
+          paths:
+            - deps
+            - ~/.mix
+        - save_cache:
           key: v1-mix-cache
-          paths: "deps"
+          paths:
+            - deps
+            - ~/.mix
+
+      - run: mix compile --warnings-as-errors
 
       # Cache build
       - save_cache:
           key: v1-build-cache-{{ .Branch }}
-          paths: "_build"
+          paths: _build
       - save_cache:
           key: v1-build-cache
-          paths: "_build"
-
-      - run: mix compile --warnings-as-errors
+          paths: _build
 
       - persist_to_workspace:
           root: ~/
@@ -75,6 +80,11 @@ jobs:
       - run: mix dialyzer --halt-exit-status
       - save_cache:
           key: v1-plt-cache-{{ checksum "mix.lock" }}
+          paths:
+            - _build
+            - ~/.mix
+      - save_cache:
+          key: v1-plt-cache
           paths:
             - _build
             - ~/.mix
