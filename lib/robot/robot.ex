@@ -154,7 +154,7 @@ defmodule Clover.Robot do
     :keep_state_and_data
   end
 
-  defp log(level, message, opts \\ []) do
+  defp log(level, message, opts) do
     Logger.log(level, "robot", message, opts)
   end
 end
