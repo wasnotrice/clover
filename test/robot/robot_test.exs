@@ -5,8 +5,6 @@ defmodule Clover.RobotTest do
   alias Clover.{Adapter, Robot, User}
   alias Clover.Robot.Supervisor, as: RobotSupervisor
 
-  import ExUnit.CaptureLog
-
   setup do
     name = "doug"
     child_spec = RobotSupervisor.child_spec({name, TestRobot, {TestAdapter, sink: self()}}, [])
@@ -36,13 +34,10 @@ defmodule Clover.RobotTest do
     refute pid_from_string(pid) == Clover.whereis_robot(name)
   end
 
+  @tag :capture_log
   test "crash in message handler doesn't crash robot", %{name: name} do
     robot = Clover.whereis_robot(name)
-
-    capture_log(fn ->
-      Adapter.incoming(name, "crash", %{})
-    end)
-
+    Adapter.incoming(name, "crash", %{})
     Process.sleep(10)
     assert Clover.whereis_robot(name) == robot
   end
