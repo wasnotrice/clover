@@ -9,7 +9,7 @@ defaults: &defaults
         MIX_ENV: test
 
 jobs:
-  build:
+  test:
     <<: *defaults
     steps:
       - checkout
@@ -61,18 +61,10 @@ jobs:
             - clover
             - .mix
 
-  credo:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: ~/
+      # Credo
       - run: mix credo --strict
 
-  dialyzer:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: ~/
+      # Dialyzer
       - restore_cache:
           keys:
             - v1-plt-cache-{{ checksum "mix.lock" }}
@@ -89,40 +81,17 @@ jobs:
             - _build
             - ~/.mix
 
-  test:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: ~/
+      # Test
       - run: mix test
 
       - store_test_results: # upload junit test results for display in Test Summary
           path: _build/test/lib/clover
 
-  coverage:
-    <<: *defaults
-    steps:
-      - attach_workspace:
-          at: ~/
-      - run:
-          name: Code coverage
-          command: mix coveralls.circle
+      # Coverage
+      - run: mix coveralls.circle
 
 workflows:
   version: 2
   continuous_integration:
     jobs:
-      - build
-      - credo:
-          requires:
-            - build
-      - dialyzer:
-          requires:
-            - build
-      - test:
-          requires:
-            - build
-      - coverage:
-          requires:
-            - build
-            - test
+      - test
