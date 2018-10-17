@@ -42,6 +42,13 @@ defmodule Clover.RobotTest do
     assert Clover.whereis_robot(name) == robot
   end
 
+  @tag :capture_log
+  test "bad return value in handler is skipped", %{name: name} do
+    # bad return handler returns "oops", but it's skipped, so the echo handler gets the message
+    Adapter.incoming(name, "bad return", %{})
+    assert_receive({:out, "bad return"})
+  end
+
   # https://github.com/koudelka/visualixir/blob/master/lib/visualixir/tracer.ex
   def pid_from_string("#PID" <> string) do
     string

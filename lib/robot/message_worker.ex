@@ -59,7 +59,7 @@ defmodule Clover.Robot.MessageWorker do
         handle_message(message, data, tail)
 
       bad_return ->
-        log(:debug, """
+        log(:error, """
         invalid handler return #{inspect(bad_return)}")
         expected {:send, %Message{}} | {:send, %Message, data} | {:noreply, data} | :nomatch
         """)

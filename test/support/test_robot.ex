@@ -28,6 +28,7 @@ defmodule Clover.Test.TestRobot do
       pong(),
       pid(),
       crash(),
+      bad_return(),
       echo()
     ]
   end
@@ -55,6 +56,16 @@ defmodule Clover.Test.TestRobot do
       match: ~r/^crash$/,
       respond: fn _message, _data ->
         raise "CRASH!"
+      end
+    }
+  end
+
+  # Returns an invalid value
+  defp bad_return do
+    %MessageHandler{
+      match: ~r/^bad return$/,
+      respond: fn message, _data ->
+        {:invalid_tag, Map.put(message, :text, "oops!")}
       end
     }
   end
