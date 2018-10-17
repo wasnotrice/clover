@@ -37,7 +37,8 @@ defmodule Clover.MixProject do
       {:credo, "~> 0.10.0", only: [:dev, :test], runtime: false},
       {:dialyxir, "~> 1.0.0-rc.3", only: [:dev, :test], runtime: false},
       {:ex_doc, "~> 0.19", only: :dev},
-      {:excoveralls, "~> 0.10", only: :test}
+      {:excoveralls, "~> 0.10", only: :test},
+      {:junit_formatter, "~> 2.2", only: :test}
     ] ++ adapter_deps()
   end
 
