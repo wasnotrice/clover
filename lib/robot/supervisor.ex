@@ -28,6 +28,6 @@ defmodule Clover.Robot.Supervisor do
       start: {__MODULE__, :start_link, [arg, opts]}
     }
 
-    Supervisor.child_spec(default, %{})
+    Supervisor.child_spec(default, [])
   end
 end

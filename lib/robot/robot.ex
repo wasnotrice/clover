@@ -47,8 +47,7 @@ defmodule Clover.Robot do
     Supervisor.child_spec(default, [])
   end
 
-  @spec start_link(atom(), {String.t(), atom() | {atom(), any()}}) ::
-          :ignore | {:error, any()} | {:ok, pid()}
+  @spec start_link(any, list) :: GenServer.on_start()
   def start_link(arg, opts \\ [])
 
   def start_link(arg, opts) do

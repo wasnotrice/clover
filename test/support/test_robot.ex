@@ -6,8 +6,7 @@ defmodule Clover.Test.TestRobot do
   use Clover.Robot
 
   alias Clover.{
-    MessageHandler,
-    Robot
+    MessageHandler
   }
 
   def init(_arg, data) do
@@ -32,7 +31,7 @@ defmodule Clover.Test.TestRobot do
   defp pong do
     %MessageHandler{
       match: ~r/^ping$/,
-      respond: fn message, data ->
+      respond: fn message, _data ->
         {:send, Map.put(message, :text, "pong")}
       end
     }

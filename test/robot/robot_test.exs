@@ -65,8 +65,6 @@ defmodule Clover.RobotTest do
     use Clover.Robot
   end
 
-  alias Clover.RobotTest.BadRobot
-
   describe "a robot with nothing defined" do
     # test "does not respond to message", %{name: name} do
     #   name = "joe"

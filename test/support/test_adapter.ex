@@ -11,6 +11,7 @@ defmodule Clover.Test.TestAdapter do
     User
   }
 
+  @impl Clover.Adapter
   def init(opts, %{robot: robot} = state) do
     sink = Keyword.fetch!(opts, :sink)
     spawn(fn -> Adapter.connected(robot, %{me: %User{id: "test", name: "test"}}) end)
@@ -33,7 +34,6 @@ defmodule Clover.Test.TestAdapter do
   end
 
   @impl Clover.Adapter
-
   def handle_out({:send, %Message{text: text}}, %{sink: sink}) do
     Kernel.send(sink, {:out, text})
   end

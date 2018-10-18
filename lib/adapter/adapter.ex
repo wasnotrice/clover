@@ -15,7 +15,7 @@ defmodule Clover.Adapter do
               {:message, Message.t(), state}
   @callback handle_out({tag :: atom, message :: Message.t()}, state :: state) ::
               {:sent, Message.t(), state}
-  @callback init(arg :: any, state :: state()) :: Genserver.on_start()
+  @callback init(arg :: any, state :: state()) :: {:ok, state()}
 
   @optional_callbacks [
     handle_in: 3,
@@ -36,7 +36,7 @@ defmodule Clover.Adapter do
       start: {__MODULE__, :start_link, [arg, opts]}
     }
 
-    Supervisor.child_spec(default, %{})
+    Supervisor.child_spec(default, [])
   end
 
   def start_link(arg, opts) do

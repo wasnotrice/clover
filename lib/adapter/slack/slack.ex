@@ -7,6 +7,7 @@ defmodule Clover.Adapter.Slack do
   alias Slack.Bot, as: SlackBot
 
   @doc false
+  @impl Clover.Adapter
   def init(opts, %{robot: robot} = state) do
     token = Keyword.fetch!(opts, :token)
 
