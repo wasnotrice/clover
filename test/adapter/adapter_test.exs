@@ -1,52 +1,47 @@
 true = Code.ensure_loaded?(Clover.Test.TestAdapter)
+true = Code.ensure_loaded?(Clover.Test.NoHandleInAdapter)
+true = Code.ensure_loaded?(Clover.Test.NoHandleOutAdapter)
+true = Code.ensure_loaded?(Clover.Test.NoInitAdapter)
 
 defmodule Clover.AdapterTest do
   use ExUnit.Case, async: true
 
   alias Clover.Adapter
-  alias Clover.Test.TestAdapter
 
-  defmodule BadAdapter do
-    use Clover.Adapter
-  end
-
-  describe "an adapter with nothing defined" do
-    test "fails to start" do
+  describe "bad adapters" do
+    test "when handle_in/3 is undefined, fails to start" do
       name = "kelly a"
 
       assert_raise(
         RuntimeError,
-        ~r/failed to start.+Reason:.+:undef.+Clover.AdapterTest.BadAdapter.+handle_in: 3/ms,
+        ~r/failed to start.+Reason:.+:undef.+Clover.Test.NoHandleInAdapter.+handle_in: 3/ms,
         fn ->
-          start_adapter!(name, Clover.AdapterTest.BadAdapter)
+          start_adapter!(name, Clover.Test.NoHandleInAdapter)
         end
       )
     end
-  end
 
-  describe "a good adapter" do
-    test "sends message" do
-      name = "larry a"
+    test "when handle_out/2 is undefined, fails to start" do
+      name = "mary a"
 
-      Registry.register(Clover.registry(), name, [])
-      assert Clover.whereis_robot(name) == self()
+      assert_raise(
+        RuntimeError,
+        ~r/failed to start.+Reason:.+:undef.+Clover.Test.NoHandleOutAdapter.+handle_out: 2/ms,
+        fn ->
+          start_adapter!(name, Clover.Test.NoHandleOutAdapter)
+        end
+      )
+    end
 
-      start_adapter!(name, TestAdapter, sink: self())
-      assert is_pid(Clover.whereis_robot_adapter(name))
-
-      Process.sleep(50)
-
-      Adapter.incoming(name, "ping", %{})
-      assert_receive({:out, "pong"})
+    test "when init/2 is undefined, starts" do
+      name = "nancy a"
+      pid = start_adapter!(name, Clover.Test.NoInitAdapter)
+      assert is_pid(pid)
     end
   end
 
   def start_adapter!(name, adapter, arg \\ []) do
     child = Adapter.child_spec({name, adapter, arg}, name: Adapter.via_tuple(name))
     start_supervised!(child)
-  end
-
-  def assert_receive_genserver_call do
-    assert_receive({:"$gen_call", {_, _}, _message})
   end
 end
