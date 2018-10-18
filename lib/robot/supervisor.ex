@@ -16,8 +16,7 @@ defmodule Clover.Robot.Supervisor do
     children = [
       Robot.child_spec({name, robot_mod, robot_arg}, name: Robot.via_tuple(name)),
       Adapter.child_spec({name, adapter_mod, adapter_arg}, name: Adapter.via_tuple(name)),
-      {DynamicSupervisor,
-       name: MessageSupervisor.via_tuple(name), strategy: :one_for_one, restart: :transient}
+      {DynamicSupervisor, name: MessageSupervisor.via_tuple(name), strategy: :one_for_one}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

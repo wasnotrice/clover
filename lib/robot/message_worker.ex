@@ -72,7 +72,8 @@ defmodule Clover.Robot.MessageWorker do
   def child_spec(arg, opts \\ []) do
     default = %{
       id: __MODULE__,
-      start: {__MODULE__, :start_link, [arg]}
+      start: {__MODULE__, :start_link, [arg]},
+      restart: :transient
     }
 
     Supervisor.child_spec(default, opts)
