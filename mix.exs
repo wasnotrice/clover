@@ -16,14 +16,10 @@ defmodule Clover.MixProject do
       elixirc_paths: elixirc_paths(Mix.env()),
       start_permanent: Mix.env() == :prod,
       test_coverage: [tool: ExCoveralls],
-      preferred_cli_env: [
-        coveralls: :test,
-        "coveralls.detail": :test,
-        "coveralls.post": :test,
-        "coveralls.html": :test
-      ],
       deps: deps(),
-      docs: docs()
+      docs: docs(),
+      aliases: aliases(),
+      preferred_cli_env: preferred_cli_env()
     ]
   end
 
@@ -70,6 +66,29 @@ defmodule Clover.MixProject do
     [
       main: "readme",
       extras: ["README.md"]
+    ]
+  end
+
+  def aliases do
+    [
+      quality: [
+        "clean",
+        "compile --warnings-as-errors",
+        "credo --strict",
+        "test --cover --raise",
+        # Run dialyzer last because it halts the chain with its exit status even if it is successful
+        "dialyzer --halt-exit-status"
+      ]
+    ]
+  end
+
+  def preferred_cli_env do
+    [
+      coveralls: :test,
+      "coveralls.detail": :test,
+      "coveralls.post": :test,
+      "coveralls.html": :test,
+      quality: :test
     ]
   end
 
