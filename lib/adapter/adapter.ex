@@ -45,15 +45,26 @@ defmodule Clover.Adapter do
 
   @doc false
   def init({robot, mod, arg}) do
-    state = %{
-      mod: mod,
-      robot: robot
-    }
+    cond do
+      !function_exported?(mod, :handle_in, 3) ->
+        {:stop, {:undef, mod, handle_in: 3}}
 
-    if function_exported?(mod, :init, 2) do
-      mod.init(arg, state)
-    else
-      {:ok, state}
+      !function_exported?(mod, :handle_out, 2) ->
+        {:stop, {:undef, mod, handle_out: 2}}
+
+      true ->
+        []
+
+        state = %{
+          mod: mod,
+          robot: robot
+        }
+
+        if function_exported?(mod, :init, 2) do
+          mod.init(arg, state)
+        else
+          {:ok, state}
+        end
     end
   end
 
@@ -94,6 +105,8 @@ defmodule Clover.Adapter do
 
   @doc false
   def handle_cast({:incoming, message, context}, %{mod: mod, robot: robot} = state) do
+    log(:debug, "incoming", inspect: state)
+
     if function_exported?(mod, :handle_in, 3) do
       case mod.handle_in({:message, message}, state, context) do
         {:message, message, state} ->
