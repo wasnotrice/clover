@@ -23,13 +23,17 @@ defmodule Clover.Robot.MessageWorker do
         do: robot_mod.message_handlers(),
         else: []
 
-    case handle_message(message, robot_data, handlers) do
-      {:send, message} ->
-        Adapter.send(name, message)
+    me = Map.get(robot_data, :me)
+    mention_format = Adapter.mention_format(name, me)
+    trimmed_message = Message.trim_leading_mention(message, mention_format)
+
+    case handle_message(trimmed_message, robot_data, handlers) do
+      {:send, reply} ->
+        Adapter.send(name, reply)
 
       # Worker could send data update back to robot
-      {:send, message, _new_data} ->
-        Adapter.send(name, message)
+      {:send, reply, _new_data} ->
+        Adapter.send(name, reply)
 
       # Worker could send data update back to robot
       {:noreply, _new_data} ->

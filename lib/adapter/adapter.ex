@@ -17,10 +17,19 @@ defmodule Clover.Adapter do
               {:sent, Message.t(), state}
   @callback init(arg :: any, state :: state()) :: {:ok, state()}
 
+  @doc """
+  A regex for detecting any mention in message text. Optional.
+  """
+  @callback mention_format() :: Regex.t()
+
+  @doc """
+  A regex for detecting a mention of `user` in message text. Required.
+  """
+  @callback mention_format(user :: Clover.User.t()) :: Regex.t()
+
   @optional_callbacks [
-    handle_in: 3,
-    handle_out: 2,
-    init: 2
+    init: 2,
+    mention_format: 0
   ]
 
   defmacro __using__(opts) do
@@ -80,6 +89,14 @@ defmodule Clover.Adapter do
     cast(robot_name, {:incoming, message, context})
   end
 
+  def mention_format(robot_name) do
+    call(robot_name, {:mention_format})
+  end
+
+  def mention_format(robot_name, user) do
+    call(robot_name, {:mention_format, user})
+  end
+
   defp call(robot_name, message) do
     robot_name
     |> Clover.whereis_robot_adapter()
@@ -101,6 +118,22 @@ defmodule Clover.Adapter do
     log(:debug, "connected", inspect: connection_state)
     Robot.connected(robot, connection_state)
     {:reply, :ok, state}
+  end
+
+  @doc false
+  def handle_call(:mention_format, _from, %{mod: mod} = state) do
+    format =
+      if function_exported?(mod, :mention_format, 0),
+        do: mod.mention_format(),
+        else: nil
+
+    {:reply, format, state}
+  end
+
+  @doc false
+  def handle_call({:mention_format, user}, _from, %{mod: mod} = state) do
+    format = mod.mention_format(user)
+    {:reply, format, state}
   end
 
   @doc false

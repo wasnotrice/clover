@@ -9,7 +9,7 @@ defmodule Clover.Adapter.Slack.MessageTest do
     User
   }
 
-  def slack do
+  def slack_message do
     %{
       channel: "C3C3C3C3C",
       client_msg_id: "8f2855bf-0463-4fe8-8b99-b6f451286ff9",
@@ -22,7 +22,7 @@ defmodule Clover.Adapter.Slack.MessageTest do
     }
   end
 
-  def context do
+  def slack_state do
     %{
       me: %{
         id: "U9U9U9U9U"
@@ -32,14 +32,11 @@ defmodule Clover.Adapter.Slack.MessageTest do
   end
 
   test "from_external" do
-    message = Slack.Message.from_external(slack(), self(), context())
+    message = Slack.Message.from_external(slack_message(), "alice", slack_state())
 
     assert message == %Message{
-             mentions: %{
-               "U9U9U9U9U" => {0, 12}
-             },
              room: "C3C3C3C3C",
-             robot: self(),
+             robot: "alice",
              text: "<@U9U9U9U9U> hi",
              type: nil,
              user: %User{

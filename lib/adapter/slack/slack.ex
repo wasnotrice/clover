@@ -4,6 +4,7 @@ defmodule Clover.Adapter.Slack do
   """
   use Clover.Adapter
 
+  alias Clover.User
   alias Slack.Bot, as: SlackBot
 
   @doc false
@@ -32,4 +33,10 @@ defmodule Clover.Adapter.Slack do
     {text, channel} = __MODULE__.Message.to_external(message)
     Kernel.send(connection, {:message, text, channel})
   end
+
+  @impl Clover.Adapter
+  def mention_format, do: ~r/<@(\w+)>/
+
+  @impl Clover.Adapter
+  def mention_format(%User{id: id}), do: ~r/<@(#{id})>/
 end

@@ -12,38 +12,29 @@ defmodule Clover.Test.Factory do
   end
 end
 
+# Note these adapters do not adopt the Clover.Adapter behaviour because they do not implement it correctly
+# (which causes compiler warnings)
+
 defmodule Clover.Test.NoHandleInAdapter do
   @moduledoc false
-  use Clover.Adapter
   import Clover.Test.Factory
 
-  @impl true
   def init(_, state), do: {:ok, state}
-
-  @impl true
   def handle_out(_, state), do: {:sent, message(), state}
 end
 
 defmodule Clover.Test.NoHandleOutAdapter do
   @moduledoc false
-  use Clover.Adapter
   import Clover.Test.Factory
 
-  @impl true
   def init(_, state), do: {:ok, state}
-
-  @impl true
   def handle_in(_, _, state), do: {:message, message(), state}
 end
 
 defmodule Clover.Test.NoInitAdapter do
   @moduledoc false
-  use Clover.Adapter
   import Clover.Test.Factory
 
-  @impl true
   def handle_in(_, _, state), do: {:message, message(), state}
-
-  @impl true
   def handle_out(_, state), do: {:sent, message(), state}
 end
