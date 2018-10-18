@@ -6,12 +6,12 @@ defmodule Clover.Robot do
 
   @callback handle_connected(connection_state :: map, data :: data()) ::
               {:ok, data()} | {:error, Clover.Error}
-  @callback init(data: any) :: GenServer.on_start()
+  @callback init(arg :: any, data :: any) :: GenServer.on_start()
   @callback message_handlers() :: [message_handler]
 
   @optional_callbacks [
     handle_connected: 2,
-    init: 1,
+    init: 2,
     message_handlers: 0
   ]
 
@@ -56,7 +56,7 @@ defmodule Clover.Robot do
   end
 
   @doc false
-  def init({mod, name} = arg) do
+  def init({name, mod, arg}) do
     Process.flag(:trap_exit, true)
 
     state = :uninitialized
@@ -68,7 +68,7 @@ defmodule Clover.Robot do
 
     {:ok, data} =
       if function_exported?(mod, :init, 1) do
-        mod.init(data)
+        mod.init(arg, data)
       else
         {:ok, data}
       end

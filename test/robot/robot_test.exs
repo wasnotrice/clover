@@ -77,7 +77,7 @@ defmodule Clover.RobotTest do
   end
 
   def start_robot!(name, robot) do
-    child_spec = RobotSupervisor.child_spec({name, robot, {TestAdapter, sink: self()}}, [])
+    child_spec = RobotSupervisor.child_spec({name, {robot, []}, {TestAdapter, sink: self()}}, [])
     start_supervised!(child_spec)
   end
 

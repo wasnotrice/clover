@@ -10,7 +10,7 @@ defmodule Clover.Test.TestRobot do
     Robot
   }
 
-  def init(data) do
+  def init(_arg, data) do
     {:ok, data}
   end
 

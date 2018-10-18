@@ -13,16 +13,20 @@ defmodule Clover do
     Clover.Supervisor.start_link(@robot_supervisor, name: Clover.App)
   end
 
-  def start_supervised_robot(name, mod, adapter, opts \\ [])
+  def start_supervised_robot(name, robot, adapter, opts \\ [])
 
-  def start_supervised_robot(name, mod, adapter, opts) when is_atom(adapter) do
-    start_supervised_robot(name, mod, {adapter, []}, opts)
+  def start_supervised_robot(name, robot, adapter, opts) when is_atom(robot) do
+    start_supervised_robot(name, {robot, []}, adapter, opts)
   end
 
-  def start_supervised_robot(name, mod, {adapter, adapter_opts}, opts) do
+  def start_supervised_robot(name, {robot, robot_arg}, adapter, opts) when is_atom(adapter) do
+    start_supervised_robot(name, {robot, robot_arg}, {adapter, []}, opts)
+  end
+
+  def start_supervised_robot(name, {robot, robot_arg}, {adapter, adapter_arg}, opts) do
     DynamicSupervisor.start_child(
       @robot_supervisor,
-      Clover.Robot.Supervisor.child_spec({name, mod, {adapter, adapter_opts}}, opts)
+      Clover.Robot.Supervisor.child_spec({name, {robot, robot_arg}, {adapter, adapter_arg}}, opts)
     )
   end
 
@@ -43,10 +47,18 @@ defmodule Clover do
 
   To stop the robot, call `Supervisor.stop(pid)`.
   """
-  def start_robot(name, mod, adapter, opts \\ [])
+  def start_robot(name, robot, adapter, opts \\ [])
 
-  def start_robot(name, mod, {adapter, adapter_opts}, opts) do
-    Clover.Robot.Supervisor.start_link({name, mod, {adapter, adapter_opts}}, opts)
+  def start_robot(name, robot, adapter, opts) when is_atom(robot) do
+    start_robot(name, {robot, []}, adapter, opts)
+  end
+
+  def start_robot(name, {robot, robot_arg}, adapter, opts) when is_atom(adapter) do
+    start_robot(name, {robot, robot_arg}, {adapter, []}, opts)
+  end
+
+  def start_robot(name, {robot, robot_arg}, {adapter, adapter_arg}, opts) do
+    Clover.Robot.Supervisor.start_link({name, {robot, robot_arg}, {adapter, adapter_arg}}, opts)
   end
 
   def registry, do: @registry
