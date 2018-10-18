@@ -15,46 +15,46 @@ defmodule Clover.Adapter do
               {:message, Message.t(), state}
   @callback handle_out({tag :: atom, message :: Message.t()}, state :: state) ::
               {:sent, Message.t(), state}
+  @callback init(arg :: any, state :: state()) :: Genserver.on_start()
 
   @optional_callbacks [
     handle_in: 3,
-    handle_out: 2
+    handle_out: 2,
+    init: 2
   ]
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
       @behaviour Clover.Adapter
-
-      if Code.ensure_loaded?(Supervisor) and function_exported?(Supervisor, :init, 2) do
-        @doc false
-        def child_spec(arg, opts \\ []) do
-          default = %{
-            id: __MODULE__,
-            start: {__MODULE__, :start_link, [arg, opts]}
-          }
-
-          Supervisor.child_spec(default, unquote(Macro.escape(opts)))
-        end
-
-        defoverridable child_spec: 2
-      end
     end
   end
 
-  def start_link(mod, {robot, arg}, opts) do
-    GenServer.start_link(__MODULE__, {mod, robot, arg}, opts)
+  @doc false
+  def child_spec(arg, opts \\ []) do
+    default = %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [arg, opts]}
+    }
+
+    Supervisor.child_spec(default, %{})
+  end
+
+  def start_link(arg, opts) do
+    GenServer.start_link(__MODULE__, arg, opts)
   end
 
   @doc false
-  def init({mod, robot, arg}) do
+  def init({robot, mod, arg}) do
     state = %{
       mod: mod,
       robot: robot
     }
 
-    {:ok, state} = mod.init(arg, state)
-
-    {:ok, state}
+    if function_exported?(mod, :init, 2) do
+      mod.init(arg, state)
+    else
+      {:ok, state}
+    end
   end
 
   def connected(robot_name, state) do

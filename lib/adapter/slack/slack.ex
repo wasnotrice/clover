@@ -4,12 +4,7 @@ defmodule Clover.Adapter.Slack do
   """
   use Clover.Adapter
 
-  alias Clover.Adapter
   alias Slack.Bot, as: SlackBot
-
-  def start_link(arg, opts \\ []) do
-    Adapter.start_link(__MODULE__, arg, opts)
-  end
 
   @doc false
   def init(opts, %{robot: robot} = state) do

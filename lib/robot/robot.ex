@@ -67,7 +67,7 @@ defmodule Clover.Robot do
     }
 
     {:ok, data} =
-      if function_exported?(mod, :init, 1) do
+      if function_exported?(mod, :init, 2) do
         mod.init(arg, data)
       else
         {:ok, data}

@@ -11,10 +11,6 @@ defmodule Clover.Test.TestAdapter do
     User
   }
 
-  def start_link({robot, adapter_opts}, opts \\ []) do
-    Adapter.start_link(__MODULE__, {robot, adapter_opts}, opts)
-  end
-
   def init(opts, %{robot: robot} = state) do
     sink = Keyword.fetch!(opts, :sink)
     spawn(fn -> Adapter.connected(robot, %{me: %User{id: "test", name: "test"}}) end)
