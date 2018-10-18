@@ -20,11 +20,9 @@ defmodule Clover do
   end
 
   def start_supervised_robot(name, mod, {adapter, adapter_opts}, opts) do
-    start_opts = Keyword.take(opts, [:timeout, :debug, :spawn_opt])
-
     DynamicSupervisor.start_child(
       @robot_supervisor,
-      Clover.Robot.Supervisor.child_spec({name, mod, {adapter, adapter_opts}}, start_opts)
+      Clover.Robot.Supervisor.child_spec({name, mod, {adapter, adapter_opts}}, opts)
     )
   end
 
@@ -48,8 +46,7 @@ defmodule Clover do
   def start_robot(name, mod, adapter, opts \\ [])
 
   def start_robot(name, mod, {adapter, adapter_opts}, opts) do
-    start_opts = Keyword.take(opts, [:timeout, :debug, :spawn_opt])
-    Clover.Robot.Supervisor.start_link({name, mod, {adapter, adapter_opts}}, start_opts)
+    Clover.Robot.Supervisor.start_link({name, mod, {adapter, adapter_opts}}, opts)
   end
 
   def registry, do: @registry

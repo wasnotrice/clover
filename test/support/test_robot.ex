@@ -10,12 +10,8 @@ defmodule Clover.Test.TestRobot do
     Robot
   }
 
-  def init(_arg, data) do
+  def init(data) do
     {:ok, data}
-  end
-
-  def start_link(arg, opts \\ []) do
-    Robot.start_link(__MODULE__, arg, opts)
   end
 
   def handle_connected(connection_state, data) do
@@ -37,7 +33,7 @@ defmodule Clover.Test.TestRobot do
     %MessageHandler{
       match: ~r/^ping$/,
       respond: fn message, data ->
-        {:send, Map.put(message, :text, "pong"), data}
+        {:send, Map.put(message, :text, "pong")}
       end
     }
   end

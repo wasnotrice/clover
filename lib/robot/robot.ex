@@ -4,11 +4,14 @@ defmodule Clover.Robot do
   """
   use GenStateMachine, callback_mode: [:handle_event_function, :state_enter]
 
-  @callback message_handlers() :: [message_handler]
   @callback handle_connected(connection_state :: map, data :: data()) ::
               {:ok, data()} | {:error, Clover.Error}
+  @callback init(data: any) :: GenServer.on_start()
+  @callback message_handlers() :: [message_handler]
 
   @optional_callbacks [
+    handle_connected: 2,
+    init: 1,
     message_handlers: 0
   ]
 
@@ -31,29 +34,25 @@ defmodule Clover.Robot do
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
       @behaviour Clover.Robot
-
-      if Code.ensure_loaded?(Supervisor) and function_exported?(Supervisor, :init, 2) do
-        @doc false
-        def child_spec(arg, opts \\ []) do
-          default = %{
-            id: __MODULE__,
-            start: {__MODULE__, :start_link, [arg, opts]}
-          }
-
-          Supervisor.child_spec(default, unquote(Macro.escape(opts)))
-        end
-
-        defoverridable child_spec: 2
-      end
     end
+  end
+
+  @doc false
+  def child_spec(arg, opts \\ []) do
+    default = %{
+      id: __MODULE__,
+      start: {__MODULE__, :start_link, [arg, opts]}
+    }
+
+    Supervisor.child_spec(default, [])
   end
 
   @spec start_link(atom(), {String.t(), atom() | {atom(), any()}}) ::
           :ignore | {:error, any()} | {:ok, pid()}
-  def start_link(mod, name, opts \\ [])
+  def start_link(arg, opts \\ [])
 
-  def start_link(mod, name, opts) do
-    GenStateMachine.start_link(__MODULE__, {mod, name}, opts)
+  def start_link(arg, opts) do
+    GenStateMachine.start_link(__MODULE__, arg, opts)
   end
 
   @doc false
@@ -67,7 +66,12 @@ defmodule Clover.Robot do
       name: name
     }
 
-    {:ok, data} = mod.init(arg, data)
+    {:ok, data} =
+      if function_exported?(mod, :init, 1) do
+        mod.init(data)
+      else
+        {:ok, data}
+      end
 
     {:ok, state, data}
   end
