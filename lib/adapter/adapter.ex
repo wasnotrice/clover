@@ -86,12 +86,6 @@ defmodule Clover.Adapter do
   end
 
   @doc false
-  def handle_call({:connect_robot, robot}, _from, state) do
-    new_state = Map.put(state, :robot, robot)
-    {:reply, :ok, new_state}
-  end
-
-  @doc false
   def handle_call({:connected, connection_state}, _from, %{robot: robot} = state) do
     log(:debug, "connected", inspect: connection_state)
     Robot.connected(robot, connection_state)
