@@ -38,6 +38,7 @@ defmodule Clover.RobotTest do
       start_robot!(name, TestRobot)
       Adapter.incoming(name, "pid", %{})
       assert_receive({:out, pid})
+      robot = Clover.whereis_robot(name)
       refute pid_from_string(pid) == Clover.whereis_robot(name)
     end
 
@@ -58,6 +59,10 @@ defmodule Clover.RobotTest do
       # bad return handler returns "oops", but it's skipped, so the echo handler gets the message
       Adapter.incoming(name, "bad return", %{})
       assert_receive({:out, "bad return"})
+    end
+
+    test "accumulates handlers" do
+      TestRobot.call()
     end
   end
 

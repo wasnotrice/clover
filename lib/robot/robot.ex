@@ -31,9 +31,76 @@ defmodule Clover.Robot do
   @type message_action :: :send | :reply | :emote
   @type message_handler :: MessageHandler.t()
 
+  defmodule Builder do
+    defmacro overhear(pattern, handler) do
+      quote do
+        @handlers {:overhear, unquote(pattern), unquote(handler)}
+        IO.inspect(@handlers, label: "overhear handlers")
+        IO.inspect(__MODULE__, label: "overhear module")
+      end
+    end
+
+    defmacro respond(pattern, handler) do
+      quote do
+        @handlers {:respond, unquote(pattern), unquote(handler)}
+      end
+    end
+
+    @doc false
+    defmacro __before_compile__(env) do
+      handlers = Module.get_attribute(env.module, :handlers)
+
+      IO.inspect(handlers, label: "__before_compile__")
+
+      quote do
+        def call do
+          Enum.each(@handlers, fn x -> IO.inspect(x, label: "call") end)
+        end
+      end
+
+      # {type, pattern, handler} = Clover.Robot.Builder.compile(env, handlers)
+
+      quote do
+        defp message_handlers() do
+          Enum.map(@handlers, fn {type, pattern, atom} ->
+            {type, pattern, atom}
+          end)
+        end
+      end
+    end
+
+    def compile(env, handlers) do
+      message = quote do: message
+
+      ast =
+        Enum.reduce(handlers, message, fn {type, pattern, handler}, acc ->
+          {type, pattern, handler}
+          |> init_handler()
+          |> quote_handler(acc, env)
+        end)
+    end
+
+    def init_handler({type, pattern, handler} = arg) do
+      arg
+    end
+
+    def quote_handler({type, pattern, handler}, acc, env) do
+      quote do
+      end
+
+      {type, pattern, handler}
+    end
+  end
+
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
       @behaviour Clover.Robot
+
+      import Clover.Robot.Builder, only: [overhear: 2, respond: 2]
+
+      Module.register_attribute(__MODULE__, :handlers, accumulate: true)
+
+      @before_compile Clover.Robot.Builder
     end
   end
 
