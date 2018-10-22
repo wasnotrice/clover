@@ -4,7 +4,7 @@ defmodule Clover.Util.Logger do
 
   alias Clover.Error
 
-  @keys [:inspect]
+  @valid_options [:inspect]
 
   def log(level, label, message, opts \\ []) do
     options = Enum.reduce(opts, %{}, &extract_option/2)
@@ -16,9 +16,10 @@ defmodule Clover.Util.Logger do
   end
 
   defp extract_option({key, _}, _) do
-    {:error, Error.exception({:badarg, {__MODULE__, "log option", key, @keys}})}
+    raise Error.exception({:invalid_option, {{__MODULE__, :log, 4}, key, @valid_options}})
   end
 
+  @doc false
   def log_message(label, message, opts) do
     fn ->
       prefix =

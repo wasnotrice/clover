@@ -110,8 +110,11 @@ defmodule Clover do
     "#{mod} does not export function #{function}/#{arity}"
   end
 
-  def format_error({:badarg, {mod, function, arg}}) do
-    "bad argument for #{mod}.#{function}: #{inspect(arg)}"
+  def format_error({:invalid_option, {{mod, function, arity}, option, valid}}) do
+    """
+    invalid option for #{mod}.#{function}/#{arity} #{inspect(option)}
+    valid options: #{inspect(valid)}
+    """
   end
 
   def format_error({:unhandled_message, message}) do
@@ -119,6 +122,6 @@ defmodule Clover do
   end
 
   def format_error(reason) do
-    reason
+    "unexpected error #{inspect(reason)}"
   end
 end
