@@ -58,11 +58,6 @@ defmodule Clover.MessageHandler do
     apply(mod, fun, [message, match, data])
   end
 
-  def respond(%__MODULE__{respond: fun}, message, match, data)
-      when is_function(fun) do
-    fun.(message, match, data)
-  end
-
   @doc """
   Create a new message handler struct
 

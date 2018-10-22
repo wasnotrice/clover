@@ -21,6 +21,14 @@ defmodule Clover.Test.TestRobot do
   respond(~r/^echo\s+(?<text>.*)$/, :echo_handler)
   respond(~r/ping/, :ping_handler)
 
+  respond(~r/^what time is it/i, message, _match, _data) do
+    {:send, Map.put(message, :text, "4:30")}
+  end
+
+  overhear(~r/^what day is it/i, message, _match, _data) do
+    {:send, Map.put(message, :text, "Every day is like Sunday")}
+  end
+
   def ping_handler(message, _match, _data) do
     {:send, Map.put(message, :text, "pong")}
   end
