@@ -17,6 +17,7 @@ defmodule Clover.Robot do
 
   alias Clover.{
     Adapter,
+    Error,
     MessageHandler,
     User
   }
@@ -32,63 +33,42 @@ defmodule Clover.Robot do
   @type message_handler :: MessageHandler.t()
 
   defmodule Builder do
+    @moduledoc false
+
     defmacro overhear(pattern, handler) do
+      handler =
+        case handler do
+          fun when is_atom(fun) -> {__CALLER__.module, fun}
+          fun when is_function(fun) -> fun
+        end
+
       quote do
-        @handlers {:overhear, unquote(pattern), unquote(handler)}
-        IO.inspect(@handlers, label: "overhear handlers")
-        IO.inspect(__MODULE__, label: "overhear module")
+        @handlers MessageHandler.new(:overhear, unquote(pattern), unquote(handler))
       end
     end
 
     defmacro respond(pattern, handler) do
+      handler =
+        case handler do
+          fun when is_atom(fun) -> {__CALLER__.module, fun}
+          fun when is_function(fun) -> fun
+        end
+
       quote do
-        @handlers {:respond, unquote(pattern), unquote(handler)}
+        @handlers MessageHandler.new(:respond, unquote(pattern), unquote(handler))
       end
     end
 
     @doc false
-    defmacro __before_compile__(env) do
-      handlers = Module.get_attribute(env.module, :handlers)
-
-      IO.inspect(handlers, label: "__before_compile__")
-
+    defmacro __before_compile__(_env) do
       quote do
-        def call do
-          Enum.each(@handlers, fn x -> IO.inspect(x, label: "call") end)
-        end
-      end
-
-      # {type, pattern, handler} = Clover.Robot.Builder.compile(env, handlers)
-
-      quote do
-        defp message_handlers() do
-          Enum.map(@handlers, fn {type, pattern, atom} ->
-            {type, pattern, atom}
-          end)
+        def message_handlers do
+          @handlers
         end
       end
     end
 
-    def compile(env, handlers) do
-      message = quote do: message
-
-      ast =
-        Enum.reduce(handlers, message, fn {type, pattern, handler}, acc ->
-          {type, pattern, handler}
-          |> init_handler()
-          |> quote_handler(acc, env)
-        end)
-    end
-
-    def init_handler({type, pattern, handler} = arg) do
-      arg
-    end
-
-    def quote_handler({type, pattern, handler}, acc, env) do
-      quote do
       end
-
-      {type, pattern, handler}
     end
   end
 

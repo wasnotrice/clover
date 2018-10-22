@@ -38,7 +38,6 @@ defmodule Clover.RobotTest do
       start_robot!(name, TestRobot)
       Adapter.incoming(name, "pid", %{})
       assert_receive({:out, pid})
-      robot = Clover.whereis_robot(name)
       refute pid_from_string(pid) == Clover.whereis_robot(name)
     end
 
@@ -56,13 +55,18 @@ defmodule Clover.RobotTest do
     test "bad return value in handler is skipped" do
       name = "ida"
       start_robot!(name, TestRobot)
-      # bad return handler returns "oops", but it's skipped, so the echo handler gets the message
+      # bad return handler returns "oops", but it's skipped, so nothing matches
       Adapter.incoming(name, "bad return", %{})
-      assert_receive({:out, "bad return"})
+      refute_receive({:out, "oops"})
     end
 
-    test "accumulates handlers" do
-      TestRobot.call()
+    test "assigns handlers" do
+      handlers = TestRobot.message_handlers()
+
+      assert Enum.find(handlers, fn x ->
+               x.match == ~r/ping/ and x.match_mode == :respond and
+                 x.respond == {Clover.Test.TestRobot, :ping_handler}
+             end)
     end
   end
 
