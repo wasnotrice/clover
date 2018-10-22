@@ -42,7 +42,7 @@ defmodule Clover.MessageHandler do
     original_text = message.text
 
     case Message.trim_leading_mention(message, mention_format) do
-      ^original_text -> nil
+      %{text: ^original_text} -> nil
       trimmed -> match(handler, trimmed)
     end
   end
