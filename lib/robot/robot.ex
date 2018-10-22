@@ -68,6 +68,19 @@ defmodule Clover.Robot do
       end
     end
 
+    @doc false
+    defmacro __after_compile__(env, _bytecode) do
+      # Check {mod, fun} handlers and raise error if they are not defined
+      for %{respond: respond} <- Module.get_attribute(env.module, :handlers) do
+        case respond do
+          {mod, fun} when is_atom(mod) and is_atom(fun) ->
+            unless Module.defines?(mod, {fun, 3}) do
+              raise Error.exception({:not_exported, {mod, fun, 3}})
+            end
+
+          _ ->
+            :ok
+        end
       end
     end
   end
@@ -81,6 +94,7 @@ defmodule Clover.Robot do
       Module.register_attribute(__MODULE__, :handlers, accumulate: true)
 
       @before_compile Clover.Robot.Builder
+      @after_compile Clover.Robot.Builder
     end
   end
 

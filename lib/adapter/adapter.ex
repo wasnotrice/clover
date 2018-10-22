@@ -150,7 +150,7 @@ defmodule Clover.Adapter do
           log(:error, Clover.format_error({:unhandled_message, message}))
       end
     else
-      log(:error, Clover.format_error({:not_exported, {mod, "handle_in/2"}}))
+      log(:error, Clover.format_error({:not_exported, {mod, :handle_in, 2}}))
       {:noreply, state}
     end
   end
@@ -163,7 +163,7 @@ defmodule Clover.Adapter do
       mod.handle_out({:send, message}, state)
       {:noreply, state}
     else
-      log(:warn, Clover.format_error({:not_exported, {mod, "handle_out/2"}}))
+      log(:warn, Clover.format_error({:not_exported, {mod, :handle_out, 2}}))
       {:noreply, state}
     end
   end

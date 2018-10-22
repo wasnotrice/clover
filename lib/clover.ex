@@ -106,8 +106,8 @@ defmodule Clover do
   defp child_pid({_, pid, _, _}), do: pid
 
   @doc false
-  def format_error({:not_exported, {mod, function}}) do
-    "#{mod} does not export function #{function}"
+  def format_error({:not_exported, {mod, function, arity}}) do
+    "#{mod} does not export function #{function}/#{arity}"
   end
 
   def format_error({:badarg, {mod, function, arg}}) do
