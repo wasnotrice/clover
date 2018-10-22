@@ -47,15 +47,45 @@ defmodule Clover.Robot do
       end
     end
 
-    defmacro respond(pattern, handler) do
-      handler =
-        case handler do
-          fun when is_atom(fun) -> {__CALLER__.module, fun}
-          fun when is_function(fun) -> fun
-        end
+    defmacro overhear(pattern, message, match, data, do: block) do
+      name = unique_handler_name()
 
       quote do
-        @handlers MessageHandler.new(:respond, unquote(pattern), unquote(handler))
+        @handlers MessageHandler.new(
+                    :overhear,
+                    unquote(pattern),
+                    unquote({__CALLER__.module, name})
+                  )
+
+        def unquote(name)(unquote(message), unquote(match), unquote(data)) do
+          unquote(block)
+        end
+      end
+    end
+
+    defmacro respond(pattern, function) when is_atom(function) do
+      quote do
+        @handlers MessageHandler.new(
+                    :respond,
+                    unquote(pattern),
+                    unquote({__CALLER__.module, function})
+                  )
+      end
+    end
+
+    defmacro respond(pattern, message, match, data, do: block) do
+      name = unique_handler_name()
+
+      quote do
+        @handlers MessageHandler.new(
+                    :respond,
+                    unquote(pattern),
+                    unquote({__CALLER__.module, name})
+                  )
+
+        def unquote(name)(unquote(message), unquote(match), unquote(data)) do
+          unquote(block)
+        end
       end
     end
 
@@ -83,13 +113,17 @@ defmodule Clover.Robot do
         end
       end
     end
+
+    defp unique_handler_name do
+      String.to_atom("__handler_#{System.unique_integer([:positive, :monotonic])}__")
+    end
   end
 
   defmacro __using__(opts) do
     quote location: :keep, bind_quoted: [opts: opts] do
       @behaviour Clover.Robot
 
-      import Clover.Robot.Builder, only: [overhear: 2, respond: 2]
+      import Clover.Robot.Builder, only: [overhear: 2, overhear: 5, respond: 2, respond: 5]
 
       Module.register_attribute(__MODULE__, :handlers, accumulate: true)
 

@@ -66,6 +66,12 @@ defmodule Clover.RobotTest do
       refute_receive({:out, "halloo down there!"})
     end
 
+    test "supports function handlers" do
+      name = start_robot!(TestRobot)
+      Adapter.incoming(name, "testbot what time is it?", %{})
+      assert_receive({:out, "4:30"})
+    end
+
     test "runs handlers in the order they were declared" do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot echo ping", %{})
