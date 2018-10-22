@@ -19,7 +19,7 @@ defmodule Clover.Test.TestRobot do
   overhear(~r/hello|hi|good morning/i, :greeting_handler)
   respond(~r/^bad return$/, :bad_return_handler)
   respond(~r/^crash$/, :crash_handler)
-  respond(~r/^echo (?<text>.*)/, :echo_handler)
+  respond(~r/^echo\s+(?<text>.*)$/, :echo_handler)
 
   def ping_handler(message, _match, _data) do
     {:send, Map.put(message, :text, "pong")}
@@ -42,8 +42,8 @@ defmodule Clover.Test.TestRobot do
     {:invalid_tag, Map.put(message, :text, "oops!")}
   end
 
-  def echo_handler(message, _match, data) do
-    {:send, message, data}
+  def echo_handler(message, %{named_captures: %{"text" => text}}, data) do
+    {:send, Map.put(message, :text, text), data}
   end
 
   defp log(level, message, opts) do

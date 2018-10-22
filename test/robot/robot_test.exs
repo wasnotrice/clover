@@ -60,6 +60,13 @@ defmodule Clover.RobotTest do
       refute_receive({:out, "oops"})
     end
 
+    test "supports named captures in match regex" do
+      name = "jane"
+      start_robot!(name, TestRobot)
+      Adapter.incoming(name, "testbot echo halloo down there!", %{})
+      assert_receive({:out, "halloo down there!"})
+    end
+
     test "assigns handlers" do
       handlers = TestRobot.message_handlers()
 

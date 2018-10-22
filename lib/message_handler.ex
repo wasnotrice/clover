@@ -24,24 +24,39 @@ defmodule Clover.MessageHandler do
           respond: handler
         }
 
-  def handle(%__MODULE__{} = handler, %Message{} = message, data) do
-    case match?(handler, message) do
-      true -> respond(handler, message, data)
-      false -> :nomatch
+  def handle(%__MODULE__{} = handler, %Message{} = message, mention_format, data) do
+    case match(handler, message, mention_format) do
+      nil -> :nomatch
+      match -> respond(handler, message, match, data)
     end
   end
 
-  def match?(%__MODULE__{match: match}, %Message{text: text}) do
-    String.match?(text, match)
+  def match(%__MODULE__{match_mode: :overhear} = handler, message, _mention_format) do
+    match(handler, message)
   end
 
-  def respond(%__MODULE__{respond: {mod, fun}}, %Message{} = message, data) do
-    match = %{}
+  def match(%__MODULE__{match_mode: :respond} = handler, message, mention_format) do
+    original_text = message.text
+
+    case Message.trim_leading_mention(message, mention_format) do
+      ^original_text -> nil
+      trimmed -> match(handler, trimmed)
+    end
+  end
+
+  def match(%__MODULE__{match: regex}, %Message{text: text}) do
+    case Regex.run(regex, text) do
+      nil -> nil
+      match -> %{match: match, named_captures: Regex.named_captures(regex, text)}
+    end
+  end
+
+  def respond(%__MODULE__{respond: {mod, fun}}, message, match, data) do
     apply(mod, fun, [message, match, data])
   end
 
-  def respond(%__MODULE__{respond: fun}, %Message{} = message, data) when is_function(fun) do
-    match = %{}
+  def respond(%__MODULE__{respond: fun}, message, match, data)
+      when is_function(fun) do
     fun.(message, match, data)
   end
 

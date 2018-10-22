@@ -14,7 +14,7 @@ defmodule Clover.Test.TestAdapter do
   @impl Clover.Adapter
   def init(opts, %{robot: robot} = state) do
     sink = Keyword.fetch!(opts, :sink)
-    spawn(fn -> Adapter.connected(robot, %{me: %User{id: "test", name: "test"}}) end)
+    spawn(fn -> Adapter.connected(robot, %{me: %User{id: "testbot", name: "testbot"}}) end)
     {:ok, Map.merge(state, %{sink: sink})}
   end
 

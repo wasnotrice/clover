@@ -25,9 +25,8 @@ defmodule Clover.Robot.MessageWorker do
 
     me = Map.get(robot_data, :me)
     mention_format = Adapter.mention_format(name, me)
-    trimmed_message = Message.trim_leading_mention(message, mention_format)
 
-    case handle_message(trimmed_message, robot_data, handlers) do
+    case handle_message(message, mention_format, robot_data, handlers) do
       {:send, reply} ->
         Adapter.send(name, reply)
 
@@ -44,12 +43,13 @@ defmodule Clover.Robot.MessageWorker do
     end
   end
 
-  @spec handle_message(Message.t(), map, [MessageHandler.t()]) ::
-          {:send, Message.t()} | {:send, Message.t(), map} | {:noreply, map} | :noreply
-  defp handle_message(_message, _data, []), do: :noreply
+  @spec handle_message(Message.t(), mention_format :: Regex.t(), data :: map, [
+          MessageHandler.t()
+        ]) :: {:send, Message.t()} | {:send, Message.t(), map} | {:noreply, map} | :noreply
+  defp handle_message(_message, mention_format, _data, []), do: :noreply
 
-  defp handle_message(message, data, [handler | tail]) do
-    case MessageHandler.handle(handler, message, data) do
+  defp handle_message(message, mention_format, data, [handler | tail]) do
+    case MessageHandler.handle(handler, message, mention_format, data) do
       {:noreply, data} ->
         {:noreply, data}
 
@@ -60,7 +60,7 @@ defmodule Clover.Robot.MessageWorker do
         {mode, message, data}
 
       :nomatch ->
-        handle_message(message, data, tail)
+        handle_message(message, mention_format, data, tail)
 
       bad_return ->
         log(:error, """
@@ -68,7 +68,7 @@ defmodule Clover.Robot.MessageWorker do
         expected {:send, %Message{}} | {:send, %Message, data} | {:noreply, data} | :nomatch
         """)
 
-        handle_message(message, data, tail)
+        handle_message(message, mention_format, data, tail)
     end
   end
 
