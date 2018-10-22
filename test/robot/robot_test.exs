@@ -12,30 +12,26 @@ defmodule Clover.RobotTest do
 
   describe "a well-built robot" do
     test "robot responds to message" do
-      name = "doug"
-      start_robot!(name, TestRobot)
+      name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot ping", %{})
       assert_receive({:out, "pong"})
     end
 
     test "robot sends message" do
-      name = "ethel"
-      start_robot!(name, TestRobot)
+      name = start_robot!(TestRobot)
       Robot.send(name, "goodbye")
       assert_receive({:out, "goodbye"})
     end
 
     test "robot receives name" do
-      name = "frida"
-      start_robot!(name, TestRobot)
+      name = start_robot!(TestRobot)
       robot_user = %User{id: "alice", name: "alice"}
       Adapter.connected(name, %{me: robot_user})
       assert Robot.name(name) == "alice"
     end
 
     test "messages are handled in separate processes" do
-      name = "gary"
-      start_robot!(name, TestRobot)
+      name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot pid", %{})
       assert_receive({:out, pid})
       refute pid_from_string(pid) == Clover.whereis_robot(name)
@@ -43,8 +39,7 @@ defmodule Clover.RobotTest do
 
     @tag :capture_log
     test "crash in message handler doesn't crash robot" do
-      name = "hank"
-      start_robot!(name, TestRobot)
+      name = start_robot!(TestRobot)
       robot = Clover.whereis_robot(name)
       Adapter.incoming(name, "crash", %{})
       Process.sleep(10)
@@ -53,30 +48,26 @@ defmodule Clover.RobotTest do
 
     @tag :capture_log
     test "bad return value in handler is skipped" do
-      name = "ida"
-      start_robot!(name, TestRobot)
+      name = start_robot!(TestRobot)
       # bad return handler returns "oops", but it's skipped, so nothing matches
       Adapter.incoming(name, "bad return", %{})
       refute_receive({:out, "oops"})
     end
 
     test "supports named captures in match regex" do
-      name = "jane"
-      start_robot!(name, TestRobot)
+      name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot echo halloo down there!", %{})
       assert_receive({:out, "halloo down there!"})
     end
 
     test "requires leading mention to match respond handler" do
-      name = "ken"
-      start_robot!(name, TestRobot)
+      name = start_robot!(TestRobot)
       Adapter.incoming(name, "echo halloo down there!", %{})
       refute_receive({:out, "halloo down there!"})
     end
 
     test "runs handlers in the order they were declared" do
-      name = "larry"
-      start_robot!(name, TestRobot)
+      name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot echo ping", %{})
       assert_receive({:out, "ping"})
     end
@@ -97,16 +88,22 @@ defmodule Clover.RobotTest do
 
   describe "a robot with nothing defined" do
     # test "does not respond to message", %{name: name} do
-    #   name = "joe"
+    #   name = unique_name()
     #   start_robot!(name, BadRobot)
     #   Adapter.incoming(name, "ping", %{})
     #   refute_receive({:out, "pong"})
     # end
   end
 
-  def start_robot!(name, robot) do
+  def start_robot!(robot) do
+    name = unique_name()
     child_spec = RobotSupervisor.child_spec({name, {robot, []}, {TestAdapter, sink: self()}}, [])
-    start_supervised!(child_spec)
+    _pid = start_supervised!(child_spec)
+    name
+  end
+
+  def unique_name do
+    "testbot-#{System.unique_integer([:positive, :monotonic])}"
   end
 
   # https://github.com/koudelka/visualixir/blob/master/lib/visualixir/tracer.ex
