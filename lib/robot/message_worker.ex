@@ -40,16 +40,32 @@ defmodule Clover.Robot.MessageWorker do
 
       :noreply ->
         :ok
+
+      :nomatch ->
+        :ok
     end
   end
 
+  # Descends into the list of handlers, attempting to match the last handler first, to preserve the order in which
+  # handlers were declared
   @spec handle_message(Message.t(), mention_format :: Regex.t(), data :: map, [
           MessageHandler.t()
-        ]) :: {:send, Message.t()} | {:send, Message.t(), map} | {:noreply, map} | :noreply
-  defp handle_message(_message, mention_format, _data, []), do: :noreply
+        ]) ::
+          {MessageHandler.respond_mode(), Message.t()}
+          | {MessageHandler.respond_mode(), Message.t(), map}
+          | {:noreply, map}
+          | :noreply
+          | :nomatch
+  defp handle_message(_message, _mention_format, _data, []), do: :noreply
+
+  defp handle_message(message, mention_format, data, [handler | []]),
+    do: MessageHandler.handle(handler, message, mention_format, data)
 
   defp handle_message(message, mention_format, data, [handler | tail]) do
-    case MessageHandler.handle(handler, message, mention_format, data) do
+    case handle_message(message, mention_format, data, tail) do
+      :noreply ->
+        {:noreply, data}
+
       {:noreply, data} ->
         {:noreply, data}
 
@@ -60,15 +76,15 @@ defmodule Clover.Robot.MessageWorker do
         {mode, message, data}
 
       :nomatch ->
-        handle_message(message, mention_format, data, tail)
+        MessageHandler.handle(handler, message, mention_format, data)
 
       bad_return ->
         log(:error, """
         invalid handler return #{inspect(bad_return)}")
-        expected {:send, %Message{}} | {:send, %Message, data} | {:noreply, data} | :nomatch
+        expected {:send, %Message{}} | {:send, %Message, data} | {:noreply, data} | :noreply | :nomatch
         """)
 
-        handle_message(message, mention_format, data, tail)
+        MessageHandler.handle(handler, message, mention_format, data)
     end
   end
 

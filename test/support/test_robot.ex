@@ -14,12 +14,12 @@ defmodule Clover.Test.TestRobot do
     {:ok, data}
   end
 
-  respond(~r/ping/, :ping_handler)
   respond(~r/^pid$/, :pid_handler)
   overhear(~r/hello|hi|good morning/i, :greeting_handler)
   respond(~r/^bad return$/, :bad_return_handler)
   respond(~r/^crash$/, :crash_handler)
   respond(~r/^echo\s+(?<text>.*)$/, :echo_handler)
+  respond(~r/ping/, :ping_handler)
 
   def ping_handler(message, _match, _data) do
     {:send, Map.put(message, :text, "pong")}

@@ -67,6 +67,13 @@ defmodule Clover.RobotTest do
       assert_receive({:out, "halloo down there!"})
     end
 
+    test "runs handlers in the order they were declared" do
+      name = "ken"
+      start_robot!(name, TestRobot)
+      Adapter.incoming(name, "testbot echo ping", %{})
+      assert_receive({:out, "ping"})
+    end
+
     test "assigns handlers" do
       handlers = TestRobot.message_handlers()
 
