@@ -41,7 +41,7 @@ defmodule Clover.RobotTest do
     test "crash in message handler doesn't crash robot" do
       name = start_robot!(TestRobot)
       robot = Clover.whereis_robot(name)
-      Adapter.incoming(name, "crash", %{})
+      Adapter.incoming(name, "testbot crash", %{})
       Process.sleep(10)
       assert Clover.whereis_robot(name) == robot
     end
@@ -50,7 +50,7 @@ defmodule Clover.RobotTest do
     test "bad return value in handler is skipped" do
       name = start_robot!(TestRobot)
       # bad return handler returns "oops", but it's skipped, so nothing matches
-      Adapter.incoming(name, "bad return", %{})
+      Adapter.incoming(name, "testbot bad return", %{})
       refute_receive({:out, "oops"})
     end
 
