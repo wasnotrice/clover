@@ -33,5 +33,14 @@ defmodule Clover.ErrorTest do
 
       assert message == "unhandled message %{text: \"hi\"}"
     end
+
+    test "unknown error" do
+      message =
+        {:bogus_error, 42}
+        |> Error.exception()
+        |> Error.message()
+
+      assert message == "unexpected error {:bogus_error, 42}"
+    end
   end
 end
