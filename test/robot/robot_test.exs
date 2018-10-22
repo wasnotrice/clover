@@ -14,7 +14,7 @@ defmodule Clover.RobotTest do
     test "robot responds to message" do
       name = "doug"
       start_robot!(name, TestRobot)
-      Adapter.incoming(name, "ping", %{})
+      Adapter.incoming(name, "testbot ping", %{})
       assert_receive({:out, "pong"})
     end
 
@@ -36,7 +36,7 @@ defmodule Clover.RobotTest do
     test "messages are handled in separate processes" do
       name = "gary"
       start_robot!(name, TestRobot)
-      Adapter.incoming(name, "pid", %{})
+      Adapter.incoming(name, "testbot pid", %{})
       assert_receive({:out, pid})
       refute pid_from_string(pid) == Clover.whereis_robot(name)
     end
@@ -67,8 +67,15 @@ defmodule Clover.RobotTest do
       assert_receive({:out, "halloo down there!"})
     end
 
-    test "runs handlers in the order they were declared" do
+    test "requires leading mention to match respond handler" do
       name = "ken"
+      start_robot!(name, TestRobot)
+      Adapter.incoming(name, "echo halloo down there!", %{})
+      refute_receive({:out, "halloo down there!"})
+    end
+
+    test "runs handlers in the order they were declared" do
+      name = "larry"
       start_robot!(name, TestRobot)
       Adapter.incoming(name, "testbot echo ping", %{})
       assert_receive({:out, "ping"})
