@@ -10,7 +10,7 @@ defmodule CloverTest do
 
     test "starts", %{robot: robot} do
       Robot.send(robot, "hello")
-      assert_receive {:out, "hello"}
+      assert_receive {:send, "hello"}
     end
 
     test "restarts", %{robot: robot} do
@@ -46,7 +46,8 @@ defmodule CloverTest do
 
     test "starts", %{robot: robot} do
       Robot.send(robot, "hello")
-      assert_receive {:out, "hello"}
+
+      assert_receive {:send, "hello"}
     end
 
     test "is not started under supervisor", %{robot: robot} do
