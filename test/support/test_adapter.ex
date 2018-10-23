@@ -35,11 +35,11 @@ defmodule Clover.Test.TestAdapter do
 
   @impl Clover.Adapter
   def handle_out({:send, %Message{text: text}}, %{sink: sink}) do
-    Kernel.send(sink, {:out, text})
+    Kernel.send(sink, {:send, text})
   end
 
   def handle_out({:send, message}, %{sink: sink}) do
-    Kernel.send(sink, {:out, message})
+    Kernel.send(sink, {:send, message})
   end
 
   @impl Clover.Adapter
