@@ -19,10 +19,6 @@ jobs:
             - v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
             - v1-mix-cache-{{ .Branch }}
             - v1-mix-cache
-      - restore_cache: # restores saved build cache
-          keys:
-            - v1-build-cache-{{ .Branch }}
-            - v1-build-cache
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -45,21 +41,7 @@ jobs:
             - deps
             - ~/.mix
 
-      - run: mix compile --warnings-as-errors
-
-      # Cache build
-      - save_cache:
-          key: v1-build-cache-{{ .Branch }}
-          paths: _build
-      - save_cache:
-          key: v1-build-cache
-          paths: _build
-
-      - persist_to_workspace:
-          root: ~/
-          paths:
-            - clover
-            - .mix
+      - run: mix do clean, compile --warnings-as-errors
 
       # Credo
       - run: mix credo --strict
@@ -68,15 +50,9 @@ jobs:
       - restore_cache:
           keys:
             - v1-plt-cache-{{ checksum "mix.lock" }}
-            - v1-plt-cache
       - run: mix dialyzer --halt-exit-status
       - save_cache:
           key: v1-plt-cache-{{ checksum "mix.lock" }}
-          paths:
-            - _build
-            - ~/.mix
-      - save_cache:
-          key: v1-plt-cache
           paths:
             - _build
             - ~/.mix
