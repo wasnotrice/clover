@@ -35,66 +35,28 @@ defmodule Clover.Robot do
   defmodule Builder do
     @moduledoc false
 
-    defmacro overhear(pattern, handler) do
-      handler =
-        case handler do
-          fun when is_atom(fun) -> {__CALLER__.module, fun}
-          fun when is_function(fun) -> fun
-        end
-
-      quote do
-        @handlers MessageHandler.new(:overhear, unquote(pattern), unquote(handler))
-      end
+    defmacro overhear(pattern, function) when is_atom(function) do
+      add_message_handler(:overhear, pattern, {__CALLER__.module, function})
     end
 
-    defmacro overhear(pattern, message, match, data, do: block) do
-      name = unique_handler_name()
-
-      quote do
-        @handlers MessageHandler.new(
-                    :overhear,
-                    unquote(pattern),
-                    unquote({__CALLER__.module, name})
-                  )
-
-        def unquote(name)(unquote(message), unquote(match), unquote(data)) do
-          unquote(block)
-        end
-      end
+    defmacro overhear(pattern, msg, match, data, do: block) do
+      handler = {__CALLER__.module, unique_handler_name()}
+      add_message_handler_block(:overhear, pattern, handler, msg, match, data, block)
     end
 
     defmacro respond(pattern, function) when is_atom(function) do
-      quote do
-        @handlers MessageHandler.new(
-                    :respond,
-                    unquote(pattern),
-                    unquote({__CALLER__.module, function})
-                  )
-      end
+      add_message_handler(:respond, pattern, {__CALLER__.module, function})
     end
 
-    defmacro respond(pattern, message, match, data, do: block) do
-      name = unique_handler_name()
-
-      quote do
-        @handlers MessageHandler.new(
-                    :respond,
-                    unquote(pattern),
-                    unquote({__CALLER__.module, name})
-                  )
-
-        def unquote(name)(unquote(message), unquote(match), unquote(data)) do
-          unquote(block)
-        end
-      end
+    defmacro respond(pattern, msg, match, data, do: block) do
+      handler = {__CALLER__.module, unique_handler_name()}
+      add_message_handler_block(:respond, pattern, handler, msg, match, data, block)
     end
 
     @doc false
     defmacro __before_compile__(_env) do
       quote do
-        def message_handlers do
-          @handlers
-        end
+        def message_handlers, do: @handlers
       end
     end
 
@@ -105,11 +67,27 @@ defmodule Clover.Robot do
         case respond do
           {mod, fun} when is_atom(mod) and is_atom(fun) ->
             unless Module.defines?(mod, {fun, 3}) do
-              raise Error.exception({:not_exported, {mod, fun, 3}})
+              raise(Error.exception({:not_exported, {mod, fun, 3}}))
             end
 
           _ ->
             :ok
+        end
+      end
+    end
+
+    defp add_message_handler(match_mode, pattern, handler) do
+      quote do
+        @handlers MessageHandler.new(unquote(match_mode), unquote(pattern), unquote(handler))
+      end
+    end
+
+    defp add_message_handler_block(match_mode, pattern, {mod, fun}, msg, match, data, block) do
+      quote do
+        @handlers MessageHandler.new(unquote(match_mode), unquote(pattern), unquote({mod, fun}))
+
+        def unquote(fun)(unquote(msg), unquote(match), unquote(data)) do
+          unquote(block)
         end
       end
     end
