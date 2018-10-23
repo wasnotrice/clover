@@ -8,7 +8,8 @@ defmodule Clover.Robot.MessageWorker do
   alias Clover.{
     Adapter,
     Message,
-    MessageHandler
+    MessageHandler,
+    Robot
   }
 
   alias Clover.Util.Logger
@@ -26,13 +27,45 @@ defmodule Clover.Robot.MessageWorker do
     me = Map.get(robot_data, :me)
     mention_format = Adapter.mention_format(name, me)
 
-    case handle_message(message, mention_format, robot_data, handlers) do
-      {:send, reply} ->
-        Adapter.send(name, reply)
+    message
+    |> handle_message(mention_format, robot_data, handlers)
+    |> handle_response(message, name)
+  end
+
+  # Descends into the list of handlers, attempting to match the last handler first, to preserve the order in which
+  # handlers were declared
+  @spec handle_message(Message.t(), mention_format :: Regex.t(), data :: map, [MessageHandler.t()]) ::
+          MessageHandler.response()
+  defp handle_message(_message, _mention_format, _data, []), do: :noreply
+
+  defp handle_message(message, mention_format, data, [handler | []]),
+    do: MessageHandler.handle(handler, message, mention_format, data)
+
+  defp handle_message(message, mention_format, data, [handler | tail]) do
+    case handle_message(message, mention_format, data, tail) do
+      :nomatch ->
+        MessageHandler.handle(handler, message, mention_format, data)
+
+      reply ->
+        reply
+    end
+  end
+
+  defp handle_response(handler_response, message, name) do
+    # log(:debug, "handler response", inspect: handler_response)
+
+    case handler_response do
+      {action, %Message{} = reply} when action in [:send] ->
+        Adapter.outgoing(name, action, reply)
 
       # Worker could send data update back to robot
-      {:send, reply, _new_data} ->
-        Adapter.send(name, reply)
+      {action, %Message{} = reply, _new_data} when action in [:send] ->
+        Adapter.outgoing(name, action, reply)
+
+      {:typing, delay, {action, %Message{} = followup}}
+      when action in [:send] and is_integer(delay) ->
+        Adapter.outgoing(name, :typing, Map.put(message, :text, nil))
+        Robot.outgoing_after(name, {action, followup}, delay)
 
       # Worker could send data update back to robot
       {:noreply, _new_data} ->
@@ -43,48 +76,18 @@ defmodule Clover.Robot.MessageWorker do
 
       :nomatch ->
         :ok
-    end
-  end
-
-  # Descends into the list of handlers, attempting to match the last handler first, to preserve the order in which
-  # handlers were declared
-  @spec handle_message(Message.t(), mention_format :: Regex.t(), data :: map, [
-          MessageHandler.t()
-        ]) ::
-          {MessageHandler.respond_mode(), Message.t()}
-          | {MessageHandler.respond_mode(), Message.t(), map}
-          | {:noreply, map}
-          | :noreply
-          | :nomatch
-  defp handle_message(_message, _mention_format, _data, []), do: :noreply
-
-  defp handle_message(message, mention_format, data, [handler | []]),
-    do: MessageHandler.handle(handler, message, mention_format, data)
-
-  defp handle_message(message, mention_format, data, [handler | tail]) do
-    case handle_message(message, mention_format, data, tail) do
-      :noreply ->
-        {:noreply, data}
-
-      {:noreply, data} ->
-        {:noreply, data}
-
-      {mode, %Message{} = message} when mode in [:send] ->
-        {mode, message}
-
-      {mode, %Message{} = message, data} when mode in [:send] ->
-        {mode, message, data}
-
-      :nomatch ->
-        MessageHandler.handle(handler, message, mention_format, data)
 
       bad_return ->
         log(:error, """
         invalid handler return #{inspect(bad_return)}")
-        expected {:send, %Message{}} | {:send, %Message, data} | {:noreply, data} | :noreply | :nomatch
+        expected one of:
+        {:send, %Message{}}
+        {:send, %Message, data}
+        {:typing, delay, [valid return]}
+        {:noreply, data}
+        :noreply
+        :nomatch
         """)
-
-        MessageHandler.handle(handler, message, mention_format, data)
     end
   end
 

@@ -44,6 +44,11 @@ defmodule Clover.Adapter.Slack.Connection do
     {:ok, state}
   end
 
+  def handle_info({:typing, channel}, slack, state) do
+    indicate_typing(channel, slack)
+    {:ok, state}
+  end
+
   def handle_info(message, _, state) do
     log(:debug, "info", inspect: message)
     {:ok, state}

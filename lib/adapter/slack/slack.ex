@@ -34,6 +34,11 @@ defmodule Clover.Adapter.Slack do
     Kernel.send(connection, {:message, text, channel})
   end
 
+  def handle_out({:typing, message}, %{connection: connection}) do
+    {_, channel} = __MODULE__.Message.to_external(message)
+    Kernel.send(connection, {:typing, channel})
+  end
+
   @impl Clover.Adapter
   def mention_format, do: ~r/<@(\w+)>/
 

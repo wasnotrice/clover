@@ -42,6 +42,10 @@ defmodule Clover.Test.TestAdapter do
     Kernel.send(sink, {:send, message})
   end
 
+  def handle_out({:typing, _message}, %{sink: sink}) do
+    Kernel.send(sink, :typing)
+  end
+
   @impl Clover.Adapter
   def mention_format(%User{name: name}), do: ~r/(#{name})/
 end
