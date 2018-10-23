@@ -16,9 +16,9 @@ jobs:
 
       - restore_cache: # restores saved mix cache
           keys: # list of cache keys, in decreasing specificity
-            - v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
-            - v1-mix-cache-{{ .Branch }}
-            - v1-mix-cache
+            - v2-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+            - v2-mix-cache-{{ .Branch }}
+            - v2-mix-cache
 
       - run: mix local.hex --force
       - run: mix local.rebar --force
@@ -26,17 +26,17 @@ jobs:
 
       # Cache deps
       - save_cache:
-          key: v1-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
+          key: v2-mix-cache-{{ .Branch }}-{{ checksum "mix.lock" }}
           paths:
             - deps
             - ~/.mix
       - save_cache:
-          key: v1-mix-cache-{{ .Branch }}
+          key: v2-mix-cache-{{ .Branch }}
           paths:
             - deps
             - ~/.mix
       - save_cache:
-          key: v1-mix-cache
+          key: v2-mix-cache
           paths:
             - deps
             - ~/.mix
@@ -49,10 +49,10 @@ jobs:
       # Dialyzer
       - restore_cache:
           keys:
-            - v1-plt-cache-{{ checksum "mix.lock" }}
+            - v2-plt-cache-{{ checksum "mix.lock" }}
       - run: mix dialyzer --halt-exit-status
       - save_cache:
-          key: v1-plt-cache-{{ checksum "mix.lock" }}
+          key: v2-plt-cache-{{ checksum "mix.lock" }}
           paths:
             - _build
             - ~/.mix
