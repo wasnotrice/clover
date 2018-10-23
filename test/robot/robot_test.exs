@@ -19,7 +19,7 @@ defmodule Clover.RobotTest do
 
     test "robot sends message" do
       name = start_robot!(TestRobot)
-      Robot.send(name, "goodbye")
+      Robot.outgoing(name, {:send, "goodbye"})
       assert_receive({:send, "goodbye"})
     end
 
@@ -66,6 +66,14 @@ defmodule Clover.RobotTest do
       refute_receive({:send, "halloo down there!"})
     end
 
+    # Don't use the `type` handler because its delay is too long :)
+    test "emits typing event" do
+      name = start_robot!(TestRobot)
+      Adapter.incoming(name, "testbot quicktype the quick brown fox", %{})
+      assert_receive(:typing)
+      assert_receive({:send, "the quick brown fox"})
+    end
+
     test "supports block syntax for direct messages" do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot what time is it?", %{})
@@ -92,19 +100,6 @@ defmodule Clover.RobotTest do
                  x.respond == {Clover.Test.TestRobot, :ping_handler}
              end)
     end
-  end
-
-  defmodule BadRobot do
-    use Clover.Robot
-  end
-
-  describe "a robot with nothing defined" do
-    # test "does not respond to message", %{name: name} do
-    #   name = unique_name()
-    #   start_robot!(name, BadRobot)
-    #   Adapter.incoming(name, "ping", %{})
-    #   refute_receive({:send, "pong"})
-    # end
   end
 
   def start_robot!(robot) do

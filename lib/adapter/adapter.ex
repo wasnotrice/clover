@@ -11,9 +11,9 @@ defmodule Clover.Adapter do
 
   @type state :: map
 
-  @callback handle_in({tag :: atom, any()}, state :: state, context :: map) ::
+  @callback handle_in({action :: atom, any()}, state :: state, context :: map) ::
               {:message, Message.t(), state}
-  @callback handle_out({tag :: atom, message :: Message.t()}, state :: state) ::
+  @callback handle_out({action :: atom, message :: Message.t()}, state :: state) ::
               {:sent, Message.t(), state}
   @callback init(arg :: any, state :: state()) :: {:ok, state()}
 
@@ -81,8 +81,8 @@ defmodule Clover.Adapter do
     call(robot_name, {:connected, state})
   end
 
-  def send(robot_name, message) do
-    cast(robot_name, {:send, message})
+  def outgoing(robot_name, action, message) when action in [:send, :typing] do
+    cast(robot_name, {:outgoing, action, message})
   end
 
   def incoming(robot_name, message, context) do
@@ -143,7 +143,7 @@ defmodule Clover.Adapter do
     if function_exported?(mod, :handle_in, 3) do
       case mod.handle_in({:message, message}, state, context) do
         {:message, message, state} ->
-          Robot.handle_in(robot, message)
+          Robot.incoming(robot, message)
           {:noreply, state}
 
         _ ->
@@ -156,11 +156,16 @@ defmodule Clover.Adapter do
   end
 
   @doc false
-  def handle_cast({:send, message}, %{mod: mod} = state) do
+  def handle_cast({:outgoing, action, message}, %{mod: mod} = state) do
     if function_exported?(mod, :handle_out, 2) do
-      log(:debug, "Adapter calling #{mod}.handle_out(#{inspect(message)}, #{inspect(state)})")
+      log(
+        :debug,
+        "Adapter calling #{mod}.handle_out({#{inspect(action)}, #{inspect(message)}}, #{
+          inspect(state)
+        })"
+      )
 
-      mod.handle_out({:send, message}, state)
+      mod.handle_out({action, message}, state)
       {:noreply, state}
     else
       log(:warn, Clover.format_error({:not_exported, {mod, :handle_out, 2}}))

@@ -9,7 +9,7 @@ defmodule CloverTest do
     setup :start_supervised_robot
 
     test "starts", %{robot: robot} do
-      Robot.send(robot, "hello")
+      Robot.outgoing(robot, {:send, "hello"})
       assert_receive {:send, "hello"}
     end
 
@@ -45,8 +45,7 @@ defmodule CloverTest do
     setup :start_unsupervised_robot
 
     test "starts", %{robot: robot} do
-      Robot.send(robot, "hello")
-
+      Robot.outgoing(robot, {:send, "hello"})
       assert_receive {:send, "hello"}
     end
 

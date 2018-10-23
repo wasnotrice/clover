@@ -31,6 +31,7 @@ defmodule Clover.Robot do
   @type actions :: [action]
   @type message_action :: :send | :reply | :emote
   @type message_handler :: MessageHandler.t()
+  @type name :: String.t()
 
   defmodule Builder do
     @moduledoc false
@@ -148,16 +149,21 @@ defmodule Clover.Robot do
     {:ok, state, data}
   end
 
-  @spec send(atom() | pid() | {atom(), any()} | {:via, atom(), any()}, any()) :: :ok
-  def send(robot_name, message) do
-    cast(robot_name, {:send, message})
+  @spec outgoing(name :: name, {atom, Clover.Message.t()}) :: :ok
+  def outgoing(robot_name, {action, message}) when action in [:send, :typing] do
+    cast(robot_name, {:outgoing, action, message})
+  end
+
+  @spec outgoing_after(name :: name, {atom, Clover.Message.t()}, integer) :: :ok
+  def outgoing_after(robot_name, {action, message}, delay) when action in [:send, :typing] do
+    cast_after(robot_name, {:outgoing, action, message}, delay)
   end
 
   def name(robot_name) do
     call(robot_name, :name)
   end
 
-  def handle_in(robot_name, message) do
+  def incoming(robot_name, message) do
     cast(robot_name, {:incoming, message})
   end
 
@@ -177,6 +183,10 @@ defmodule Clover.Robot do
     |> GenServer.cast(message)
   end
 
+  defp cast_after(robot_name, message, delay) do
+    cast(robot_name, {:after, message, delay})
+  end
+
   def via_tuple(name) do
     {:via, Registry, {Clover.registry(), name}}
   end
@@ -193,9 +203,16 @@ defmodule Clover.Robot do
   end
 
   @doc false
-  def handle_event(:cast, {:send, text}, _state, %{name: name})
-      when is_binary(text) do
-    Adapter.send(name, text)
+  def handle_event(:cast, {:outgoing, action, message}, _state, %{name: name}) do
+    log(:debug, "outgoing", inspect: {action, message})
+    Adapter.outgoing(name, :send, message)
+    :keep_state_and_data
+  end
+
+  @doc false
+  # Send event to self after delay. Comes to handle_event/4 with :info tag
+  def handle_event(:cast, {:after, message, delay}, _state, _data) do
+    Process.send_after(self(), message, delay)
     :keep_state_and_data
   end
 
@@ -223,6 +240,12 @@ defmodule Clover.Robot do
   def handle_event({:call, from}, :name, _state, data) do
     %User{name: name} = Map.get(data, :me, %User{})
     {:keep_state_and_data, [{:reply, from, name}]}
+  end
+
+  @doc false
+  def handle_event(:info, {:outgoing, action, message}, _state, _data) do
+    GenServer.cast(self(), {:outgoing, action, message})
+    :keep_state_and_data
   end
 
   @doc false

@@ -10,8 +10,16 @@ defmodule Clover.MessageHandler do
   import Kernel, except: [match?: 2]
 
   @type match_mode :: :overhear | :respond
-  @type respond_mode :: :send
+  @type action :: :send | :typing
   @type handler :: {module :: atom, function :: atom} | function()
+  @type data :: term
+  @type actionable_message :: {action, Message.t()} | {action, Message.t(), data}
+  @type response ::
+          :nomatch
+          | :noreply
+          | {:noreply, data}
+          | {:typing, integer, actionable_message}
+          | actionable_message
 
   @enforce_keys [:match, :respond]
 
@@ -25,8 +33,7 @@ defmodule Clover.MessageHandler do
           respond: handler
         }
 
-  @spec handle(handler :: t, message :: Message.t(), mention_format :: Regex.t(), data :: map) ::
-          :nomatch | {respond_mode, Message.t(), map} | {respond_mode, Message.t()}
+  @spec handle(t, Message.t(), Regex.t(), data) :: response
   def handle(%__MODULE__{} = handler, %Message{} = message, mention_format, data) do
     case match(handler, message, mention_format) do
       nil -> :nomatch

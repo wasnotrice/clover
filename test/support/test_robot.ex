@@ -15,7 +15,6 @@ defmodule Clover.Test.TestRobot do
   end
 
   respond(~r/^pid$/, :pid_handler)
-  overhear(~r/hello|hi|good morning/i, :greeting_handler)
   respond(~r/^bad return$/, :bad_return_handler)
   respond(~r/^crash$/, :crash_handler)
   respond(~r/^echo\s+(?<text>.*)$/, :echo_handler)
@@ -24,6 +23,11 @@ defmodule Clover.Test.TestRobot do
   respond(~r/^what time is it/i, message, _match, _data) do
     {:send, Map.put(message, :text, "4:30")}
   end
+
+  respond(~r/^type\s+(?<text>.*)$/, :type_handler)
+  respond(~r/^quicktype\s+(?<text>.*)$/, :quick_type_handler)
+
+  overhear(~r/\bhello|hi|good morning\b/i, :greeting_handler)
 
   overhear(~r/^what day is it/i, message, _match, _data) do
     {:send, Map.put(message, :text, "Every day is like Sunday")}
@@ -47,11 +51,19 @@ defmodule Clover.Test.TestRobot do
 
   # Returns an invalid value
   def bad_return_handler(message, _match, _data) do
-    {:invalid_tag, Map.put(message, :text, "oops!")}
+    {:invalid_action, Map.put(message, :text, "oops!")}
   end
 
   def echo_handler(message, %{named_captures: %{"text" => text}}, data) do
     {:send, Map.put(message, :text, text), data}
+  end
+
+  def type_handler(message, %{named_captures: %{"text" => text}}, _data) do
+    {:typing, 1500, {:send, Map.put(message, :text, text)}}
+  end
+
+  def quick_type_handler(message, %{named_captures: %{"text" => text}}, _data) do
+    {:typing, 10, {:send, Map.put(message, :text, text)}}
   end
 
   defp log(level, message, opts) do
