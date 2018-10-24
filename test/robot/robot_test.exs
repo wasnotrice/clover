@@ -86,6 +86,12 @@ defmodule Clover.RobotTest do
       assert_receive({:say, "Every day is like Sunday"})
     end
 
+    test "supports module syntax for handlers" do
+      name = start_robot!(TestRobot)
+      Adapter.incoming(name, "testbot hex encode 255", %{})
+      assert_receive({:say, "FF"})
+    end
+
     test "runs handlers in the order they were declared" do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot echo ping", %{})

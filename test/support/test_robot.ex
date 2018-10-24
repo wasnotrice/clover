@@ -33,6 +33,11 @@ defmodule Clover.Test.TestRobot do
     {:say, Map.put(message, :text, "Every day is like Sunday")}
   end
 
+  # Add a module-based handler
+  handler Clover.Test.TestHandler
+
+  # Handlers
+
   def ping_handler(message, _match, _data) do
     {:say, Map.put(message, :text, "pong")}
   end

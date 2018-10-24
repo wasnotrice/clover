@@ -36,6 +36,10 @@ defmodule Clover.Robot do
   defmodule Builder do
     @moduledoc false
 
+    defmacro handler(module, options \\ []) do
+      add_message_handler_module(module, options)
+    end
+
     defmacro overhear(pattern, function) when is_atom(function) do
       add_message_handler(:overhear, pattern, {__CALLER__.module, function})
     end
@@ -93,6 +97,14 @@ defmodule Clover.Robot do
       end
     end
 
+    def add_message_handler_module(mod, _options) do
+      any_message = Macro.escape(~r/^.*$/)
+
+      quote do
+        @handlers MessageHandler.new(:overhear, unquote(any_message), unquote(mod))
+      end
+    end
+
     defp unique_handler_name do
       String.to_atom("__handler_#{System.unique_integer([:positive, :monotonic])}__")
     end
@@ -102,7 +114,8 @@ defmodule Clover.Robot do
     quote location: :keep, bind_quoted: [opts: opts] do
       @behaviour Clover.Robot
 
-      import Clover.Robot.Builder, only: [overhear: 2, overhear: 5, respond: 2, respond: 5]
+      import Clover.Robot.Builder,
+        only: [handler: 1, handler: 2, overhear: 2, overhear: 5, respond: 2, respond: 5]
 
       Module.register_attribute(__MODULE__, :handlers, accumulate: true)
 

@@ -33,11 +33,36 @@ defmodule Clover.MessageHandler do
           respond: handler
         }
 
+  # Descends into the list of handlers, attempting to match the last handler first, to preserve the order in which
+  # handlers were declared
+  @spec handle_message(Message.t(), mention_format :: Regex.t(), data :: map, [t()] | atom) ::
+          response()
+  def handle_message(_message, _mention_format, _data, []), do: :noreply
+
+  def handle_message(message, mention_format, data, [handler | []]),
+    do: handle(handler, message, mention_format, data)
+
+  def handle_message(message, mention_format, data, [handler | tail]) do
+    case handle_message(message, mention_format, data, tail) do
+      :nomatch -> handle(handler, message, mention_format, data)
+      reply -> reply
+    end
+  end
+
   @spec handle(t, Message.t(), Regex.t(), data) :: response
   def handle(%__MODULE__{} = handler, %Message{} = message, mention_format, data) do
     case match(handler, message, mention_format) do
-      nil -> :nomatch
-      match -> respond(handler, message, match, data)
+      nil ->
+        :nomatch
+
+      match ->
+        case handler.respond do
+          mod when is_atom(mod) ->
+            handle_message(message, mention_format, data, mod.message_handlers())
+
+          _ ->
+            respond(handler, message, match, data)
+        end
     end
   end
 
@@ -57,7 +82,7 @@ defmodule Clover.MessageHandler do
   def match(%__MODULE__{match: regex}, %Message{text: text}) do
     case Regex.run(regex, text) do
       nil -> nil
-      match -> %{match: match, named_captures: Regex.named_captures(regex, text)}
+      captures -> %{captures: captures, named_captures: Regex.named_captures(regex, text)}
     end
   end
 
@@ -86,8 +111,8 @@ defmodule Clover.MessageHandler do
     %__MODULE__{match: match, match_mode: mode, respond: {mod, fun}}
   end
 
-  def new(mode, match, fun) when is_function(fun) do
-    %__MODULE__{match: match, match_mode: mode, respond: fun}
+  def new(mode, match, handler) when is_atom(handler) do
+    %__MODULE__{match: match, match_mode: mode, respond: handler}
   end
 
   @doc """

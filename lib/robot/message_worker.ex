@@ -28,27 +28,8 @@ defmodule Clover.Robot.MessageWorker do
     mention_format = Adapter.mention_format(name, me)
 
     message
-    |> handle_message(mention_format, robot_data, handlers)
+    |> MessageHandler.handle_message(mention_format, robot_data, handlers)
     |> handle_response(message, name)
-  end
-
-  # Descends into the list of handlers, attempting to match the last handler first, to preserve the order in which
-  # handlers were declared
-  @spec handle_message(Message.t(), mention_format :: Regex.t(), data :: map, [MessageHandler.t()]) ::
-          MessageHandler.response()
-  defp handle_message(_message, _mention_format, _data, []), do: :noreply
-
-  defp handle_message(message, mention_format, data, [handler | []]),
-    do: MessageHandler.handle(handler, message, mention_format, data)
-
-  defp handle_message(message, mention_format, data, [handler | tail]) do
-    case handle_message(message, mention_format, data, tail) do
-      :nomatch ->
-        MessageHandler.handle(handler, message, mention_format, data)
-
-      reply ->
-        reply
-    end
   end
 
   defp handle_response(handler_response, message, name) do
