@@ -14,22 +14,22 @@ defmodule Clover.Test.TestRobot do
     {:ok, data}
   end
 
-  respond(~r/^pid$/, :pid_handler)
-  respond(~r/^bad return$/, :bad_return_handler)
-  respond(~r/^crash$/, :crash_handler)
-  respond(~r/^echo\s+(?<text>.*)$/, :echo_handler)
-  respond(~r/ping/, :ping_handler)
+  respond ~r/^pid$/, :pid_handler
+  respond ~r/^bad return$/, :bad_return_handler
+  respond ~r/^crash$/, :crash_handler
+  respond ~r/^echo\s+(?<text>.*)$/, :echo_handler
+  respond ~r/ping/, :ping_handler
 
-  respond(~r/^what time is it/i, message, _match, _data) do
+  respond ~r/^what time is it/i, message, _match, _data do
     {:say, Map.put(message, :text, "4:30")}
   end
 
-  respond(~r/^type\s+(?<text>.*)$/, :type_handler)
-  respond(~r/^quicktype\s+(?<text>.*)$/, :quick_type_handler)
+  respond ~r/^type\s+(?<text>.*)$/, :type_handler
+  respond ~r/^quicktype\s+(?<text>.*)$/, :quick_type_handler
 
-  overhear(~r/\bhello|hi|good morning\b/i, :greeting_handler)
+  overhear ~r/\bhello|hi|good morning\b/i, :greeting_handler
 
-  overhear(~r/^what day is it/i, message, _match, _data) do
+  overhear ~r/^what day is it/i, message, _match, _data do
     {:say, Map.put(message, :text, "Every day is like Sunday")}
   end
 
