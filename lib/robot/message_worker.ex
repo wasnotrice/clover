@@ -55,15 +55,15 @@ defmodule Clover.Robot.MessageWorker do
     # log(:debug, "handler response", inspect: handler_response)
 
     case handler_response do
-      {action, %Message{} = reply} when action in [:send] ->
+      {action, %Message{} = reply} when action in [:say] ->
         Adapter.outgoing(name, action, reply)
 
       # Worker could send data update back to robot
-      {action, %Message{} = reply, _new_data} when action in [:send] ->
+      {action, %Message{} = reply, _new_data} when action in [:say] ->
         Adapter.outgoing(name, action, reply)
 
       {:typing, delay, {action, %Message{} = followup}}
-      when action in [:send] and is_integer(delay) ->
+      when action in [:say] and is_integer(delay) ->
         Adapter.outgoing(name, :typing, Map.put(message, :text, nil))
         Robot.outgoing_after(name, {action, followup}, delay)
 
@@ -81,8 +81,8 @@ defmodule Clover.Robot.MessageWorker do
         log(:error, """
         invalid handler return #{inspect(bad_return)}")
         expected one of:
-        {:send, %Message{}}
-        {:send, %Message, data}
+        {:say, %Message{}}
+        {:say, %Message, data}
         {:typing, delay, [valid return]}
         {:noreply, data}
         :noreply

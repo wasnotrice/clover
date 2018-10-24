@@ -29,7 +29,7 @@ defmodule Clover.Adapter.Slack do
 
   @impl Clover.Adapter
 
-  def handle_out({:send, message}, %{connection: connection}) do
+  def handle_out({:say, message}, %{connection: connection}) do
     {text, channel} = __MODULE__.Message.to_external(message)
     Kernel.send(connection, {:message, text, channel})
   end

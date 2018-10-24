@@ -21,7 +21,7 @@ defmodule Clover.Test.TestRobot do
   respond(~r/ping/, :ping_handler)
 
   respond(~r/^what time is it/i, message, _match, _data) do
-    {:send, Map.put(message, :text, "4:30")}
+    {:say, Map.put(message, :text, "4:30")}
   end
 
   respond(~r/^type\s+(?<text>.*)$/, :type_handler)
@@ -30,19 +30,19 @@ defmodule Clover.Test.TestRobot do
   overhear(~r/\bhello|hi|good morning\b/i, :greeting_handler)
 
   overhear(~r/^what day is it/i, message, _match, _data) do
-    {:send, Map.put(message, :text, "Every day is like Sunday")}
+    {:say, Map.put(message, :text, "Every day is like Sunday")}
   end
 
   def ping_handler(message, _match, _data) do
-    {:send, Map.put(message, :text, "pong")}
+    {:say, Map.put(message, :text, "pong")}
   end
 
   def pid_handler(message, _match, _data) do
-    {:send, Map.put(message, :text, inspect(self()))}
+    {:say, Map.put(message, :text, inspect(self()))}
   end
 
   def greeting_handler(message, _match, _data) do
-    {:send, Map.put(message, :text, "hi")}
+    {:say, Map.put(message, :text, "hi")}
   end
 
   def crash_handler(_message, _match, _data) do
@@ -55,15 +55,15 @@ defmodule Clover.Test.TestRobot do
   end
 
   def echo_handler(message, %{named_captures: %{"text" => text}}, data) do
-    {:send, Map.put(message, :text, text), data}
+    {:say, Map.put(message, :text, text), data}
   end
 
   def type_handler(message, %{named_captures: %{"text" => text}}, _data) do
-    {:typing, 1500, {:send, Map.put(message, :text, text)}}
+    {:typing, 1500, {:say, Map.put(message, :text, text)}}
   end
 
   def quick_type_handler(message, %{named_captures: %{"text" => text}}, _data) do
-    {:typing, 10, {:send, Map.put(message, :text, text)}}
+    {:typing, 10, {:say, Map.put(message, :text, text)}}
   end
 
   defp log(level, message, opts) do

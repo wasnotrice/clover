@@ -81,7 +81,7 @@ defmodule Clover.Adapter do
     call(robot_name, {:connected, state})
   end
 
-  def outgoing(robot_name, action, message) when action in [:send, :typing] do
+  def outgoing(robot_name, action, message) when action in [:say, :typing] do
     cast(robot_name, {:outgoing, action, message})
   end
 

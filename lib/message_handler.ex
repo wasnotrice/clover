@@ -10,7 +10,7 @@ defmodule Clover.MessageHandler do
   import Kernel, except: [match?: 2]
 
   @type match_mode :: :overhear | :respond
-  @type action :: :send | :typing
+  @type action :: :say | :typing
   @type handler :: {module :: atom, function :: atom} | function()
   @type data :: term
   @type actionable_message :: {action, Message.t()} | {action, Message.t(), data}

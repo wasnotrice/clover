@@ -14,13 +14,13 @@ defmodule Clover.RobotTest do
     test "robot responds to message" do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot ping", %{})
-      assert_receive({:send, "pong"})
+      assert_receive({:say, "pong"})
     end
 
     test "robot sends message" do
       name = start_robot!(TestRobot)
-      Robot.outgoing(name, {:send, "goodbye"})
-      assert_receive({:send, "goodbye"})
+      Robot.outgoing(name, {:say, "goodbye"})
+      assert_receive({:say, "goodbye"})
     end
 
     test "robot receives name" do
@@ -33,7 +33,7 @@ defmodule Clover.RobotTest do
     test "messages are handled in separate processes" do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot pid", %{})
-      assert_receive({:send, pid})
+      assert_receive({:say, pid})
       refute pid_from_string(pid) == Clover.whereis_robot(name)
     end
 
@@ -51,19 +51,19 @@ defmodule Clover.RobotTest do
       name = start_robot!(TestRobot)
       # bad return handler returns "oops", but it's skipped, so nothing matches
       Adapter.incoming(name, "testbot bad return", %{})
-      refute_receive({:send, "oops"})
+      refute_receive({:say, "oops"})
     end
 
     test "supports named captures in match regex" do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot echo halloo down there!", %{})
-      assert_receive({:send, "halloo down there!"})
+      assert_receive({:say, "halloo down there!"})
     end
 
     test "requires leading mention to match respond handler" do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "echo halloo down there!", %{})
-      refute_receive({:send, "halloo down there!"})
+      refute_receive({:say, "halloo down there!"})
     end
 
     # Don't use the `type` handler because its delay is too long :)
@@ -71,25 +71,25 @@ defmodule Clover.RobotTest do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot quicktype the quick brown fox", %{})
       assert_receive(:typing)
-      assert_receive({:send, "the quick brown fox"})
+      assert_receive({:say, "the quick brown fox"})
     end
 
     test "supports block syntax for direct messages" do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot what time is it?", %{})
-      assert_receive({:send, "4:30"})
+      assert_receive({:say, "4:30"})
     end
 
     test "supports block syntax for overheard messages" do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "what day is it?", %{})
-      assert_receive({:send, "Every day is like Sunday"})
+      assert_receive({:say, "Every day is like Sunday"})
     end
 
     test "runs handlers in the order they were declared" do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot echo ping", %{})
-      assert_receive({:send, "ping"})
+      assert_receive({:say, "ping"})
     end
 
     test "assigns handlers" do

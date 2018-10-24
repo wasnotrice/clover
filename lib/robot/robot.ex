@@ -29,7 +29,7 @@ defmodule Clover.Robot do
   @type data :: map
   @type action :: GenStateMachine.action()
   @type actions :: [action]
-  @type message_action :: :send | :reply | :emote
+  @type message_action :: :say | :reply | :emote
   @type message_handler :: MessageHandler.t()
   @type name :: String.t()
 
@@ -150,12 +150,12 @@ defmodule Clover.Robot do
   end
 
   @spec outgoing(name :: name, {atom, Clover.Message.t()}) :: :ok
-  def outgoing(robot_name, {action, message}) when action in [:send, :typing] do
+  def outgoing(robot_name, {action, message}) when action in [:say, :typing] do
     cast(robot_name, {:outgoing, action, message})
   end
 
   @spec outgoing_after(name :: name, {atom, Clover.Message.t()}, integer) :: :ok
-  def outgoing_after(robot_name, {action, message}, delay) when action in [:send, :typing] do
+  def outgoing_after(robot_name, {action, message}, delay) when action in [:say, :typing] do
     cast_after(robot_name, {:outgoing, action, message}, delay)
   end
 
@@ -205,7 +205,7 @@ defmodule Clover.Robot do
   @doc false
   def handle_event(:cast, {:outgoing, action, message}, _state, %{name: name}) do
     log(:debug, "outgoing", inspect: {action, message})
-    Adapter.outgoing(name, :send, message)
+    Adapter.outgoing(name, :say, message)
     :keep_state_and_data
   end
 

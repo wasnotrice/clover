@@ -34,12 +34,12 @@ defmodule Clover.Test.TestAdapter do
   end
 
   @impl Clover.Adapter
-  def handle_out({:send, %Message{text: text}}, %{sink: sink}) do
-    Kernel.send(sink, {:send, text})
+  def handle_out({:say, %Message{text: text}}, %{sink: sink}) do
+    Kernel.send(sink, {:say, text})
   end
 
-  def handle_out({:send, message}, %{sink: sink}) do
-    Kernel.send(sink, {:send, message})
+  def handle_out({:say, message}, %{sink: sink}) do
+    Kernel.send(sink, {:say, message})
   end
 
   def handle_out({:typing, _message}, %{sink: sink}) do

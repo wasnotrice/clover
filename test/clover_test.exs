@@ -9,8 +9,8 @@ defmodule CloverTest do
     setup :start_supervised_robot
 
     test "starts", %{robot: robot} do
-      Robot.outgoing(robot, {:send, "hello"})
-      assert_receive {:send, "hello"}
+      Robot.outgoing(robot, {:say, "hello"})
+      assert_receive {:say, "hello"}
     end
 
     test "restarts", %{robot: robot} do
@@ -45,8 +45,8 @@ defmodule CloverTest do
     setup :start_unsupervised_robot
 
     test "starts", %{robot: robot} do
-      Robot.outgoing(robot, {:send, "hello"})
-      assert_receive {:send, "hello"}
+      Robot.outgoing(robot, {:say, "hello"})
+      assert_receive {:say, "hello"}
     end
 
     test "is not started under supervisor", %{robot: robot} do
