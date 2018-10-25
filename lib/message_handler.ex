@@ -4,8 +4,11 @@ defmodule Clover.MessageHandler do
   """
 
   alias Clover.{
+    Error,
     Message
   }
+
+  alias Clover.Util.Logger
 
   import Kernel, except: [match?: 2]
 
@@ -50,18 +53,30 @@ defmodule Clover.MessageHandler do
   end
 
   @spec handle(t, Message.t(), Regex.t(), data) :: response
+  # If the handler is a module, then skip the match and try all of the modules handlers
+  def handle(%__MODULE__{respond: mod}, %Message{} = message, mention_format, data)
+      when is_atom(mod) do
+    handle_message(message, mention_format, data, mod.message_handlers())
+  end
+
   def handle(%__MODULE__{} = handler, %Message{} = message, mention_format, data) do
     case match(handler, message, mention_format) do
       nil ->
         :nomatch
 
       match ->
-        case handler.respond do
-          mod when is_atom(mod) ->
-            handle_message(message, mention_format, data, mod.message_handlers())
+        validated =
+          handler
+          |> respond(message, match, data)
+          |> validate_response()
 
-          _ ->
-            respond(handler, message, match, data)
+        case validated do
+          {:ok, response} ->
+            response
+
+          {:error, %Error{} = error} ->
+            log(:error, Error.message(error))
+            :nomatch
         end
     end
   end
@@ -88,6 +103,32 @@ defmodule Clover.MessageHandler do
 
   def respond(%__MODULE__{respond: {mod, fun}}, message, match, data) do
     apply(mod, fun, [message, match, data])
+  end
+
+  @spec validate_response(response) :: {:ok, response} | {:error, %Error{}}
+  defp validate_response(response) do
+    case response do
+      %Message{action: action} when action in [:say, :typing] ->
+        {:ok, response}
+
+      {%Message{action: action}, _new_data} when action in [:say, :typing] ->
+        {:ok, response}
+
+      messages when is_list(messages) ->
+        {:ok, response}
+
+      {:noreply, _new_data} ->
+        {:ok, response}
+
+      :noreply ->
+        {:ok, response}
+
+      :nomatch ->
+        {:ok, response}
+
+      invalid_return ->
+        {:error, Error.exception({:invalid_message_handler_return, invalid_return})}
+    end
   end
 
   @doc """
@@ -137,5 +178,9 @@ defmodule Clover.MessageHandler do
   """
   def from_tuple({mode, match, respond}) when mode in [:overhear, :respond] do
     %__MODULE__{match: match, match_mode: mode, respond: respond}
+  end
+
+  defp log(level, message, opts \\ []) do
+    Logger.log(level, "message worker", message, opts)
   end
 end

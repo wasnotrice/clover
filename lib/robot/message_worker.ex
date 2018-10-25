@@ -46,27 +46,8 @@ defmodule Clover.Robot.MessageWorker do
       messages when is_list(messages) ->
         Enum.each(messages, &dispatch(name, &1))
 
-      # Worker could send data update back to robot
-      {:noreply, _new_data} ->
+      _ ->
         :ok
-
-      :noreply ->
-        :ok
-
-      :nomatch ->
-        :ok
-
-      invalid_return ->
-        log(:error, """
-        invalid handler return #{inspect(invalid_return)}")
-        expected one of:
-        %Message{}
-        {%Message, data}
-        [%Message{}]
-        {:noreply, data}
-        :noreply
-        :nomatch
-        """)
     end
   end
 
@@ -90,7 +71,7 @@ defmodule Clover.Robot.MessageWorker do
     Supervisor.child_spec(default, opts)
   end
 
-  defp log(level, message, opts \\ []) do
+  defp log(level, message, opts) do
     Logger.log(level, "message worker", message, opts)
   end
 end

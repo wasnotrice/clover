@@ -16,6 +16,7 @@ defmodule Clover.Test.TestRobot do
 
   respond ~r/^pid$/, :pid_handler
   respond ~r/^bad return$/, :bad_return_handler
+  respond ~r/^bad return$/, :bad_return_rescue
   respond ~r/^crash$/, :crash_handler
   respond ~r/^echo\s+(?<text>.*)$/, :echo_handler
   respond ~r/ping/, :ping_handler
@@ -59,6 +60,10 @@ defmodule Clover.Test.TestRobot do
     message
     |> Map.put(:action, :invalid_action)
     |> Map.put(:text, "oops!")
+  end
+
+  def bad_return_rescue(message, _match, _data) do
+    say(message, "rescued bad return")
   end
 
   def echo_handler(message, %{named_captures: %{"text" => text}}, data) do

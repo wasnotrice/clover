@@ -34,6 +34,15 @@ defmodule Clover.ErrorTest do
       assert message == "unhandled message %{text: \"hi\"}"
     end
 
+    test ":invalid_message_handler_return" do
+      message =
+        {:invalid_message_handler_return, %{action: :invalid}}
+        |> Error.exception()
+        |> Error.message()
+
+      assert message =~ "invalid handler return"
+    end
+
     test "unknown error" do
       message =
         {:bogus_error, 42}

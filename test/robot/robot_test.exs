@@ -49,9 +49,9 @@ defmodule Clover.RobotTest do
     @tag :capture_log
     test "bad return value in handler is skipped" do
       name = start_robot!(TestRobot)
-      # bad return handler returns "oops", but it's skipped, so nothing matches
       Adapter.incoming(name, "testbot bad return", %{})
       refute_receive({:say, "oops"})
+      assert_receive({:say, "rescued bad return"})
     end
 
     test "supports named captures in match regex" do
