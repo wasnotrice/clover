@@ -20,8 +20,11 @@ defmodule Clover.Test.TestRobot do
   respond ~r/^echo\s+(?<text>.*)$/, :echo_handler
   respond ~r/ping/, :ping_handler
 
+  # A module-based handler
+  handler Clover.Test.TestHandler
+
   respond ~r/^what time is it/i, message, _match, _data do
-    {:say, Map.put(message, :text, "4:30")}
+    say(message, "4:30")
   end
 
   respond ~r/^type\s+(?<text>.*)$/, :type_handler
@@ -30,24 +33,21 @@ defmodule Clover.Test.TestRobot do
   overhear ~r/\bhello|hi|good morning\b/i, :greeting_handler
 
   overhear ~r/^what day is it/i, message, _match, _data do
-    {:say, Map.put(message, :text, "Every day is like Sunday")}
+    say(message, "Every day is like Sunday")
   end
-
-  # Add a module-based handler
-  handler Clover.Test.TestHandler
 
   # Handlers
 
   def ping_handler(message, _match, _data) do
-    {:say, Map.put(message, :text, "pong")}
+    say(message, "pong")
   end
 
   def pid_handler(message, _match, _data) do
-    {:say, Map.put(message, :text, inspect(self()))}
+    say(message, inspect(self()))
   end
 
   def greeting_handler(message, _match, _data) do
-    {:say, Map.put(message, :text, "hi")}
+    say(message, "hi")
   end
 
   def crash_handler(_message, _match, _data) do
@@ -56,19 +56,27 @@ defmodule Clover.Test.TestRobot do
 
   # Returns an invalid value
   def bad_return_handler(message, _match, _data) do
-    {:invalid_action, Map.put(message, :text, "oops!")}
+    message
+    |> Map.put(:action, :invalid_action)
+    |> Map.put(:text, "oops!")
   end
 
   def echo_handler(message, %{named_captures: %{"text" => text}}, data) do
-    {:say, Map.put(message, :text, text), data}
+    {say(message, text), data}
   end
 
   def type_handler(message, %{named_captures: %{"text" => text}}, _data) do
-    {:typing, 1500, {:say, Map.put(message, :text, text)}}
+    [
+      message |> typing(),
+      message |> say(text, delay: 1500)
+    ]
   end
 
   def quick_type_handler(message, %{named_captures: %{"text" => text}}, _data) do
-    {:typing, 10, {:say, Map.put(message, :text, text)}}
+    [
+      message |> typing(),
+      message |> say(text, delay: 10)
+    ]
   end
 
   defp log(level, message, opts) do

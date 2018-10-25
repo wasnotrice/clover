@@ -7,7 +7,7 @@ defmodule Clover.RobotTest do
   use ExUnit.Case, async: true
 
   alias Clover.Test.{TestAdapter, TestRobot}
-  alias Clover.{Adapter, Robot, User}
+  alias Clover.{Adapter, Message, Robot, User}
   alias Clover.Robot.Supervisor, as: RobotSupervisor
 
   describe "a well-built robot" do
@@ -19,7 +19,7 @@ defmodule Clover.RobotTest do
 
     test "robot sends message" do
       name = start_robot!(TestRobot)
-      Robot.outgoing(name, {:say, "goodbye"})
+      Robot.outgoing(name, Message.say(%Message{}, "goodbye"))
       assert_receive({:say, "goodbye"})
     end
 
@@ -90,6 +90,14 @@ defmodule Clover.RobotTest do
       name = start_robot!(TestRobot)
       Adapter.incoming(name, "testbot hex encode 255", %{})
       assert_receive({:say, "FF"})
+      Adapter.incoming(name, "testbot hex encode my face", %{})
+      assert_receive({:say, "I can only convert integers"})
+    end
+
+    test "supports overhearing" do
+      name = start_robot!(TestRobot)
+      Adapter.incoming(name, "hello everyone", %{})
+      assert_receive({:say, "hi"})
     end
 
     test "runs handlers in the order they were declared" do

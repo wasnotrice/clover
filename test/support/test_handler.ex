@@ -14,10 +14,10 @@ defmodule Clover.Test.TestHandler do
         |> String.to_integer()
         |> Integer.to_string(16)
 
-      {:say, Map.put(message, :text, encoded)}
+      say(message, encoded)
     rescue
       ArgumentError ->
-        {:say, Map.put(message, :text, "I can only convert integers")}
+        say(message, "I can only convert integers")
     end
   end
 end

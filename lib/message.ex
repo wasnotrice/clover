@@ -4,16 +4,21 @@ defmodule Clover.Message do
   """
   alias Clover.User
 
+  @type action :: :say | :typing
   @type mention :: {start :: non_neg_integer, length :: non_neg_integer}
   @type mentions :: %{required(String.t()) => mention}
 
-  defstruct robot: nil,
+  defstruct action: nil,
+            delay: nil,
+            robot: nil,
             room: nil,
             text: nil,
             type: nil,
             user: %User{}
 
   @type t :: %__MODULE__{
+          action: action | nil,
+          delay: non_neg_integer | nil,
           robot: String.t(),
           room: String.t() | nil,
           text: String.t(),
@@ -133,5 +138,27 @@ defmodule Clover.Message do
       nil -> message
       mention -> trim_mention(message, mention)
     end
+  end
+
+  def typing(%__MODULE__{} = message, options \\ []) do
+    message
+    |> Map.put(:action, :typing)
+    |> Map.put(:text, nil)
+    |> build_message(options)
+  end
+
+  def say(%__MODULE__{} = message, text, options \\ []) do
+    message
+    |> Map.put(:action, :say)
+    |> Map.put(:text, text)
+    |> build_message(options)
+  end
+
+  defp build_message(%__MODULE__{} = message, options) do
+    Enum.reduce(options, message, &build_message/2)
+  end
+
+  defp build_message({:delay, delay}, message) do
+    Map.put(message, :delay, delay)
   end
 end

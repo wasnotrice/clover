@@ -24,17 +24,17 @@ defmodule Clover.Adapter.Slack do
 
   @impl Clover.Adapter
   def handle_in({:message, message}, state, context) do
-    {:message, __MODULE__.Message.from_external(message, state.robot, context), state}
+    {__MODULE__.Message.from_external(message, state.robot, context), state}
   end
 
   @impl Clover.Adapter
 
-  def handle_out({:say, message}, %{connection: connection}) do
+  def handle_out(%{action: :say} = message, %{connection: connection}) do
     {text, channel} = __MODULE__.Message.to_external(message)
-    Kernel.send(connection, {:message, text, channel})
+    Kernel.send(connection, {:say, text, channel})
   end
 
-  def handle_out({:typing, message}, %{connection: connection}) do
+  def handle_out(%{action: :typing} = message, %{connection: connection}) do
     {_, channel} = __MODULE__.Message.to_external(message)
     Kernel.send(connection, {:typing, channel})
   end

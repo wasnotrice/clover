@@ -39,7 +39,7 @@ defmodule Clover.Adapter.Slack.Connection do
     {:ok, state}
   end
 
-  def handle_info({:message, text, channel}, slack, state) do
+  def handle_info({:say, text, channel}, slack, state) do
     send_message(text, channel, slack)
     {:ok, state}
   end

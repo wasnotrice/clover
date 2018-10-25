@@ -17,7 +17,7 @@ defmodule Clover.Adapter.SlackTest do
     incoming = %{text: "hi there", user: @user_id, channel: "lobby", subtype: nil}
     state = %{robot: "alice s"}
 
-    assert {:message, message, _} = Slack.handle_in({:message, incoming}, state, @slack_state)
+    assert {message, _} = Slack.handle_in({:message, incoming}, state, @slack_state)
 
     assert message ==
              %Clover.Message{

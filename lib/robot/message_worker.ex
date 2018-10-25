@@ -29,24 +29,22 @@ defmodule Clover.Robot.MessageWorker do
 
     message
     |> MessageHandler.handle_message(mention_format, robot_data, handlers)
-    |> handle_response(message, name)
+    |> handle_response(name)
   end
 
-  defp handle_response(handler_response, message, name) do
-    # log(:debug, "handler response", inspect: handler_response)
+  defp handle_response(handler_response, name) do
+    log(:debug, "handle_response/2", inspect: handler_response)
 
     case handler_response do
-      {action, %Message{} = reply} when action in [:say] ->
-        Adapter.outgoing(name, action, reply)
+      %Message{} = reply ->
+        dispatch(name, reply)
 
       # Worker could send data update back to robot
-      {action, %Message{} = reply, _new_data} when action in [:say] ->
-        Adapter.outgoing(name, action, reply)
+      {%Message{} = reply, _new_data} ->
+        dispatch(name, reply)
 
-      {:typing, delay, {action, %Message{} = followup}}
-      when action in [:say] and is_integer(delay) ->
-        Adapter.outgoing(name, :typing, Map.put(message, :text, nil))
-        Robot.outgoing_after(name, {action, followup}, delay)
+      messages when is_list(messages) ->
+        Enum.each(messages, &dispatch(name, &1))
 
       # Worker could send data update back to robot
       {:noreply, _new_data} ->
@@ -58,18 +56,27 @@ defmodule Clover.Robot.MessageWorker do
       :nomatch ->
         :ok
 
-      bad_return ->
+      invalid_return ->
         log(:error, """
-        invalid handler return #{inspect(bad_return)}")
+        invalid handler return #{inspect(invalid_return)}")
         expected one of:
-        {:say, %Message{}}
-        {:say, %Message, data}
-        {:typing, delay, [valid return]}
+        %Message{}
+        {%Message, data}
+        [%Message{}]
         {:noreply, data}
         :noreply
         :nomatch
         """)
     end
+  end
+
+  # Delayed messages routed through robot
+  def dispatch(name, %Message{delay: delay} = message) when is_integer(delay) do
+    Robot.outgoing(name, message)
+  end
+
+  def dispatch(name, message) do
+    Adapter.outgoing(name, message)
   end
 
   @doc false

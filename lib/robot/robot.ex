@@ -18,6 +18,7 @@ defmodule Clover.Robot do
   alias Clover.{
     Adapter,
     Error,
+    Message,
     MessageHandler,
     User
   }
@@ -98,10 +99,8 @@ defmodule Clover.Robot do
     end
 
     def add_message_handler_module(mod, _options) do
-      any_message = Macro.escape(~r/^.*$/)
-
       quote do
-        @handlers MessageHandler.new(:overhear, unquote(any_message), unquote(mod))
+        @handlers MessageHandler.new(:overhear, unquote(Macro.escape(~r/^.*$/)), unquote(mod))
       end
     end
 
@@ -116,6 +115,8 @@ defmodule Clover.Robot do
 
       import Clover.Robot.Builder,
         only: [handler: 1, handler: 2, overhear: 2, overhear: 5, respond: 2, respond: 5]
+
+      import Clover.Message, only: [say: 2, say: 3, typing: 1, typing: 2]
 
       Module.register_attribute(__MODULE__, :handlers, accumulate: true)
 
@@ -153,23 +154,24 @@ defmodule Clover.Robot do
     }
 
     {:ok, data} =
-      if function_exported?(mod, :init, 2) do
-        mod.init(arg, data)
-      else
-        {:ok, data}
-      end
+      if function_exported?(mod, :init, 2),
+        do: mod.init(arg, data),
+        else: {:ok, data}
 
     {:ok, state, data}
   end
 
-  @spec outgoing(name :: name, {atom, Clover.Message.t()}) :: :ok
-  def outgoing(robot_name, {action, message}) when action in [:say, :typing] do
-    cast(robot_name, {:outgoing, action, message})
+  @spec outgoing(name :: name, Message.t()) :: :ok
+  def outgoing(robot_name, %Message{action: action, delay: delay} = message)
+      when is_integer(delay) and action in [:say, :typing] do
+    log(:debug, "outgoing delayed", inspect: message)
+    cast_after(robot_name, {:outgoing, message}, delay)
   end
 
-  @spec outgoing_after(name :: name, {atom, Clover.Message.t()}, integer) :: :ok
-  def outgoing_after(robot_name, {action, message}, delay) when action in [:say, :typing] do
-    cast_after(robot_name, {:outgoing, action, message}, delay)
+  def outgoing(robot_name, %Message{action: action} = message) when action in [:say, :typing] do
+    log(:debug, "outgoing immediate", inspect: message)
+
+    cast(robot_name, {:outgoing, message})
   end
 
   def name(robot_name) do
@@ -197,7 +199,7 @@ defmodule Clover.Robot do
   end
 
   defp cast_after(robot_name, message, delay) do
-    cast(robot_name, {:after, message, delay})
+    cast(robot_name, {:delay, message, delay})
   end
 
   def via_tuple(name) do
@@ -216,15 +218,15 @@ defmodule Clover.Robot do
   end
 
   @doc false
-  def handle_event(:cast, {:outgoing, action, message}, _state, %{name: name}) do
-    log(:debug, "outgoing", inspect: {action, message})
-    Adapter.outgoing(name, :say, message)
+  def handle_event(:cast, {:outgoing, message}, _state, %{name: name}) do
+    log(:debug, "outgoing", inspect: message)
+    Adapter.outgoing(name, message)
     :keep_state_and_data
   end
 
   @doc false
   # Send event to self after delay. Comes to handle_event/4 with :info tag
-  def handle_event(:cast, {:after, message, delay}, _state, _data) do
+  def handle_event(:cast, {:delay, message, delay}, _state, _data) do
     Process.send_after(self(), message, delay)
     :keep_state_and_data
   end
@@ -256,8 +258,8 @@ defmodule Clover.Robot do
   end
 
   @doc false
-  def handle_event(:info, {:outgoing, action, message}, _state, _data) do
-    GenServer.cast(self(), {:outgoing, action, message})
+  def handle_event(:info, {:outgoing, message}, _state, _data) do
+    GenServer.cast(self(), {:outgoing, message})
     :keep_state_and_data
   end
 

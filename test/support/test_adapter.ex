@@ -19,7 +19,7 @@ defmodule Clover.Test.TestAdapter do
   end
 
   @impl Clover.Adapter
-  @spec handle_in({:message, String.t()}, map, any()) :: {:message, Message.t(), map}
+  @spec handle_in({:message, String.t()}, map, any()) :: {Message.t(), map}
   def handle_in({:message, text}, %{robot: robot} = state, _context) do
     message = %Message{
       robot: robot,
@@ -30,20 +30,16 @@ defmodule Clover.Test.TestAdapter do
       }
     }
 
-    {:message, message, state}
+    {message, state}
   end
 
   @impl Clover.Adapter
-  def handle_out({:say, %Message{text: text}}, %{sink: sink}) do
-    Kernel.send(sink, {:say, text})
+  def handle_out(%Message{action: action, text: text}, %{sink: sink}) when action in [:say] do
+    Kernel.send(sink, {action, text})
   end
 
-  def handle_out({:say, message}, %{sink: sink}) do
-    Kernel.send(sink, {:say, message})
-  end
-
-  def handle_out({:typing, _message}, %{sink: sink}) do
-    Kernel.send(sink, :typing)
+  def handle_out(%Message{action: action}, %{sink: sink}) when action in [:typing] do
+    Kernel.send(sink, action)
   end
 
   @impl Clover.Adapter

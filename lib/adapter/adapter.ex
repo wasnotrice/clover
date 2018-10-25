@@ -11,10 +11,13 @@ defmodule Clover.Adapter do
 
   @type state :: map
 
-  @callback handle_in({action :: atom, any()}, state :: state, context :: map) ::
-              {:message, Message.t(), state}
-  @callback handle_out({action :: atom, message :: Message.t()}, state :: state) ::
-              {:sent, Message.t(), state}
+  @doc """
+  Handler for incoming messages
+
+  The `message` will be whatever was passed to Adapter.incoming. This will depend on the adapter.
+  """
+  @callback handle_in({:message, any()}, state :: state, context :: map) :: {Message.t(), state}
+  @callback handle_out(message :: Message.t(), state :: state) :: {Message.t(), state}
   @callback init(arg :: any, state :: state()) :: {:ok, state()}
 
   @doc """
@@ -81,12 +84,12 @@ defmodule Clover.Adapter do
     call(robot_name, {:connected, state})
   end
 
-  def outgoing(robot_name, action, message) when action in [:say, :typing] do
-    cast(robot_name, {:outgoing, action, message})
+  def outgoing(robot_name, message) do
+    cast(robot_name, {:outgoing, message})
   end
 
   def incoming(robot_name, message, context) do
-    cast(robot_name, {:incoming, message, context})
+    cast(robot_name, {:incoming, {:message, message}, context})
   end
 
   def mention_format(robot_name) do
@@ -137,12 +140,13 @@ defmodule Clover.Adapter do
   end
 
   @doc false
-  def handle_cast({:incoming, message, context}, %{mod: mod, robot: robot} = state) do
-    log(:debug, "incoming", inspect: state)
+  def handle_cast({:incoming, {:message, message}, context}, %{mod: mod, robot: robot} = state) do
+    log(:debug, "incoming", inspect: {message, state})
 
     if function_exported?(mod, :handle_in, 3) do
       case mod.handle_in({:message, message}, state, context) do
-        {:message, message, state} ->
+        {message, state} ->
+          log(:debug, "handled message", inspect: message)
           Robot.incoming(robot, message)
           {:noreply, state}
 
@@ -156,16 +160,10 @@ defmodule Clover.Adapter do
   end
 
   @doc false
-  def handle_cast({:outgoing, action, message}, %{mod: mod} = state) do
+  def handle_cast({:outgoing, message}, %{mod: mod} = state) do
     if function_exported?(mod, :handle_out, 2) do
-      log(
-        :debug,
-        "Adapter calling #{mod}.handle_out({#{inspect(action)}, #{inspect(message)}}, #{
-          inspect(state)
-        })"
-      )
-
-      mod.handle_out({action, message}, state)
+      log(:debug, "Adapter calling #{mod}.handle_out({#{inspect(message)}}, #{inspect(state)})")
+      mod.handle_out(message, state)
       {:noreply, state}
     else
       log(:warn, Clover.format_error({:not_exported, {mod, :handle_out, 2}}))
