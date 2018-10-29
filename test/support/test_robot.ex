@@ -22,7 +22,7 @@ defmodule Clover.Test.TestRobot do
   respond ~r/ping/, :ping_script
 
   # A module-based script
-  script(Clover.Test.TestScript)
+  script(Clover.Test.Hexadecimal)
 
   respond ~r/^what time is it/i, message, _match, _data do
     say(message, "4:30")

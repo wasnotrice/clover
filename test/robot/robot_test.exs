@@ -90,7 +90,11 @@ defmodule Clover.RobotTest do
     Adapter.incoming(name, "testbot hex encode 255", %{})
     assert_receive({:say, "FF"})
     Adapter.incoming(name, "testbot hex encode my face", %{})
-    assert_receive({:say, "I can only convert integers"})
+    assert_receive({:say, ~s(I can't decode "my face". Is it an integer?)})
+    Adapter.incoming(name, "testbot hex decode ff", %{})
+    assert_receive({:say, "255"})
+    Adapter.incoming(name, "testbot hex decode fg", %{})
+    assert_receive({:say, ~s(I can't decode "fg". Is it a hex string?)})
   end
 
   test "supports overhearing" do
