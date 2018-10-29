@@ -37,7 +37,7 @@ defmodule Clover.RobotTest do
   end
 
   @tag :capture_log
-  test "crash in message handler doesn't crash robot" do
+  test "crash in script doesn't crash robot" do
     name = start_robot!(TestRobot)
     robot = Clover.whereis_robot(name)
     Adapter.incoming(name, "testbot crash", %{})
@@ -46,7 +46,7 @@ defmodule Clover.RobotTest do
   end
 
   @tag :capture_log
-  test "bad return value in handler is skipped" do
+  test "bad return value in script is skipped" do
     name = start_robot!(TestRobot)
     Adapter.incoming(name, "testbot bad return", %{})
     refute_receive({:say, "oops"})
@@ -59,13 +59,13 @@ defmodule Clover.RobotTest do
     assert_receive({:say, "halloo down there!"})
   end
 
-  test "requires leading mention to match respond handler" do
+  test "requires leading mention to match 'respond' script" do
     name = start_robot!(TestRobot)
     Adapter.incoming(name, "echo halloo down there!", %{})
     refute_receive({:say, "halloo down there!"})
   end
 
-  # Don't use the `type` handler because its delay is too long :)
+  # Don't use the `type` script because its delay is too long :)
   test "emits typing event" do
     name = start_robot!(TestRobot)
     Adapter.incoming(name, "testbot quicktype the quick brown fox", %{})
@@ -85,7 +85,7 @@ defmodule Clover.RobotTest do
     assert_receive({:say, "Every day is like Sunday"})
   end
 
-  test "supports module syntax for handlers" do
+  test "supports module syntax for scripts" do
     name = start_robot!(TestRobot)
     Adapter.incoming(name, "testbot hex encode 255", %{})
     assert_receive({:say, "FF"})
@@ -99,18 +99,18 @@ defmodule Clover.RobotTest do
     assert_receive({:say, "hi"})
   end
 
-  test "runs handlers in the order they were declared" do
+  test "runs scripts in the order they were declared" do
     name = start_robot!(TestRobot)
     Adapter.incoming(name, "testbot echo ping", %{})
     assert_receive({:say, "ping"})
   end
 
-  test "assigns handlers" do
-    handlers = TestRobot.message_handlers()
+  test "assigns scripts" do
+    scripts = TestRobot.scripts()
 
-    assert Enum.find(handlers, fn x ->
+    assert Enum.find(scripts, fn x ->
              x.match == ~r/ping/ and x.match_mode == :respond and
-               x.respond == {Clover.Test.TestRobot, :ping_handler}
+               x.respond == {Clover.Test.TestRobot, :ping_script}
            end)
   end
 

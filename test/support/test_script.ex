@@ -1,6 +1,6 @@
-defmodule Clover.Test.TestHandler do
+defmodule Clover.Test.TestScript do
   @moduledoc """
-  A module-style handler for testing
+  A module-style script for testing
   """
 
   use Clover.Robot

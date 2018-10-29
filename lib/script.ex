@@ -1,4 +1,4 @@
-defmodule Clover.MessageHandler do
+defmodule Clover.Script do
   @moduledoc """
   A data structure for handling `Clover.Message`s
   """
@@ -13,7 +13,7 @@ defmodule Clover.MessageHandler do
   import Kernel, except: [match?: 2]
 
   @type match_mode :: :overhear | :respond
-  @type handler :: {module :: atom, function :: atom} | function()
+  @type script :: {module :: atom, function :: atom} | function()
   @type data :: term
   @type response ::
           :nomatch
@@ -33,40 +33,40 @@ defmodule Clover.MessageHandler do
   @type t :: %__MODULE__{
           match: Regex.t(),
           match_mode: match_mode,
-          respond: handler
+          respond: script
         }
 
-  # Descends into the list of handlers, attempting to match the last handler first, to preserve the order in which
-  # handlers were declared
+  # Descends into the list of scripts, attempting to match the last script first, to preserve the order in which
+  # scripts were declared
   @spec handle_message(Message.t(), mention_format :: Regex.t(), data :: map, [t()] | atom) ::
           response()
   def handle_message(_message, _mention_format, _data, []), do: :noreply
 
-  def handle_message(message, mention_format, data, [handler | []]),
-    do: handle(handler, message, mention_format, data)
+  def handle_message(message, mention_format, data, [script | []]),
+    do: handle(script, message, mention_format, data)
 
-  def handle_message(message, mention_format, data, [handler | tail]) do
+  def handle_message(message, mention_format, data, [script | tail]) do
     case handle_message(message, mention_format, data, tail) do
-      :nomatch -> handle(handler, message, mention_format, data)
+      :nomatch -> handle(script, message, mention_format, data)
       reply -> reply
     end
   end
 
   @spec handle(t, Message.t(), Regex.t(), data) :: response
-  # If the handler is a module, then skip the match and try all of the modules handlers
+  # If the script is a module, then skip the match and try all of the modules scripts
   def handle(%__MODULE__{respond: mod}, %Message{} = message, mention_format, data)
       when is_atom(mod) do
-    handle_message(message, mention_format, data, mod.message_handlers())
+    handle_message(message, mention_format, data, mod.scripts())
   end
 
-  def handle(%__MODULE__{} = handler, %Message{} = message, mention_format, data) do
-    case match(handler, message, mention_format) do
+  def handle(%__MODULE__{} = script, %Message{} = message, mention_format, data) do
+    case match(script, message, mention_format) do
       nil ->
         :nomatch
 
       match ->
         validated =
-          handler
+          script
           |> respond(message, match, data)
           |> validate_response()
 
@@ -81,16 +81,16 @@ defmodule Clover.MessageHandler do
     end
   end
 
-  def match(%__MODULE__{match_mode: :overhear} = handler, message, _mention_format) do
-    match(handler, message)
+  def match(%__MODULE__{match_mode: :overhear} = script, message, _mention_format) do
+    match(script, message)
   end
 
-  def match(%__MODULE__{match_mode: :respond} = handler, message, mention_format) do
+  def match(%__MODULE__{match_mode: :respond} = script, message, mention_format) do
     original_text = message.text
 
     case Message.trim_leading_mention(message, mention_format) do
       %{text: ^original_text} -> nil
-      trimmed -> match(handler, trimmed)
+      trimmed -> match(script, trimmed)
     end
   end
 
@@ -127,23 +127,23 @@ defmodule Clover.MessageHandler do
         {:ok, response}
 
       invalid_return ->
-        {:error, Error.exception({:invalid_message_handler_return, invalid_return})}
+        {:error, Error.exception({:invalid_script_return, invalid_return})}
     end
   end
 
   @doc """
-  Create a new message handler struct
+  Create a new script struct
 
   ## Examples
 
-  iex> MessageHandler.new(:overhear, ~r/hi/, {SomeModule, :some_function})
-  %MessageHandler{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}}
+  iex> Script.new(:overhear, ~r/hi/, {SomeModule, :some_function})
+  %Script{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}}
 
-  iex> MessageHandler.new(%MessageHandler{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}})
-  %MessageHandler{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}}
+  iex> Script.new(%Script{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}})
+  %Script{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}}
 
-  iex> MessageHandler.new({:overhear, ~r/hi/, {SomeModule, :some_function}})
-  %MessageHandler{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}}
+  iex> Script.new({:overhear, ~r/hi/, {SomeModule, :some_function}})
+  %Script{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}}
   """
   def new(%__MODULE__{} = struct), do: struct
   def new(tuple) when is_tuple(tuple), do: from_tuple(tuple)
@@ -152,16 +152,16 @@ defmodule Clover.MessageHandler do
     %__MODULE__{match: match, match_mode: mode, respond: {mod, fun}}
   end
 
-  def new(mode, match, handler) when is_atom(handler) do
-    %__MODULE__{match: match, match_mode: mode, respond: handler}
+  def new(mode, match, script) when is_atom(script) do
+    %__MODULE__{match: match, match_mode: mode, respond: script}
   end
 
   @doc """
-  Given a message handler struct, return a tuple
+  Given a script struct, return a tuple
 
   ## Examples
 
-  iex> MessageHandler.to_tuple(%MessageHandler{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}})
+  iex> Script.to_tuple(%Script{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}})
   {:overhear, ~r/hi/, {SomeModule, :some_function}}
   """
   def to_tuple(%__MODULE__{match: match, match_mode: mode, respond: respond}) do
@@ -169,12 +169,12 @@ defmodule Clover.MessageHandler do
   end
 
   @doc """
-  Given a message handler tuple, return a struct
+  Given a script tuple, return a struct
 
   ## Examples
 
-      iex> MessageHandler.from_tuple({:overhear, ~r/hi/, {SomeModule, :some_function}})
-      %MessageHandler{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}}
+      iex> Script.from_tuple({:overhear, ~r/hi/, {SomeModule, :some_function}})
+      %Script{match: ~r/hi/, match_mode: :overhear, respond: {SomeModule, :some_function}}
   """
   def from_tuple({mode, match, respond}) when mode in [:overhear, :respond] do
     %__MODULE__{match: match, match_mode: mode, respond: respond}

@@ -8,7 +8,7 @@ defmodule Clover.Robot.MessageWorker do
   alias Clover.{
     Adapter,
     Message,
-    MessageHandler,
+    Script,
     Robot
   }
 
@@ -20,15 +20,15 @@ defmodule Clover.Robot.MessageWorker do
 
   def run({name, robot_mod, robot_data, message}) do
     handlers =
-      if function_exported?(robot_mod, :message_handlers, 0),
-        do: robot_mod.message_handlers(),
+      if function_exported?(robot_mod, :scripts, 0),
+        do: robot_mod.scripts(),
         else: []
 
     me = Map.get(robot_data, :me)
     mention_format = Adapter.mention_format(name, me)
 
     message
-    |> MessageHandler.handle_message(mention_format, robot_data, handlers)
+    |> Script.handle_message(mention_format, robot_data, handlers)
     |> handle_response(name)
   end
 

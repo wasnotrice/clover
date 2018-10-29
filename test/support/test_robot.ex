@@ -14,49 +14,49 @@ defmodule Clover.Test.TestRobot do
     {:ok, data}
   end
 
-  respond ~r/^pid$/, :pid_handler
-  respond ~r/^bad return$/, :bad_return_handler
+  respond ~r/^pid$/, :pid_script
+  respond ~r/^bad return$/, :bad_return_script
   respond ~r/^bad return$/, :bad_return_rescue
-  respond ~r/^crash$/, :crash_handler
-  respond ~r/^echo\s+(?<text>.*)$/, :echo_handler
-  respond ~r/ping/, :ping_handler
+  respond ~r/^crash$/, :crash_script
+  respond ~r/^echo\s+(?<text>.*)$/, :echo_script
+  respond ~r/ping/, :ping_script
 
-  # A module-based handler
-  handler Clover.Test.TestHandler
+  # A module-based script
+  script(Clover.Test.TestScript)
 
   respond ~r/^what time is it/i, message, _match, _data do
     say(message, "4:30")
   end
 
-  respond ~r/^type\s+(?<text>.*)$/, :type_handler
-  respond ~r/^quicktype\s+(?<text>.*)$/, :quick_type_handler
+  respond ~r/^type\s+(?<text>.*)$/, :type_script
+  respond ~r/^quicktype\s+(?<text>.*)$/, :quick_type_script
 
-  overhear ~r/\bhello|hi|good morning\b/i, :greeting_handler
+  overhear ~r/\bhello|hi|good morning\b/i, :greeting_script
 
   overhear ~r/^what day is it/i, message, _match, _data do
     say(message, "Every day is like Sunday")
   end
 
-  # Handlers
+  # Scripts
 
-  def ping_handler(message, _match, _data) do
+  def ping_script(message, _match, _data) do
     say(message, "pong")
   end
 
-  def pid_handler(message, _match, _data) do
+  def pid_script(message, _match, _data) do
     say(message, inspect(self()))
   end
 
-  def greeting_handler(message, _match, _data) do
+  def greeting_script(message, _match, _data) do
     say(message, "hi")
   end
 
-  def crash_handler(_message, _match, _data) do
+  def crash_script(_message, _match, _data) do
     raise "CRASH!"
   end
 
   # Returns an invalid value
-  def bad_return_handler(message, _match, _data) do
+  def bad_return_script(message, _match, _data) do
     message
     |> Map.put(:action, :invalid_action)
     |> Map.put(:text, "oops!")
@@ -66,18 +66,18 @@ defmodule Clover.Test.TestRobot do
     say(message, "rescued bad return")
   end
 
-  def echo_handler(message, %{named_captures: %{"text" => text}}, data) do
+  def echo_script(message, %{named_captures: %{"text" => text}}, data) do
     {say(message, text), data}
   end
 
-  def type_handler(message, %{named_captures: %{"text" => text}}, _data) do
+  def type_script(message, %{named_captures: %{"text" => text}}, _data) do
     [
       message |> typing(),
       message |> say(text, delay: 1500)
     ]
   end
 
-  def quick_type_handler(message, %{named_captures: %{"text" => text}}, _data) do
+  def quick_type_script(message, %{named_captures: %{"text" => text}}, _data) do
     [
       message |> typing(),
       message |> say(text, delay: 10)

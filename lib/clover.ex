@@ -121,9 +121,9 @@ defmodule Clover do
     "unhandled message #{inspect(message)}"
   end
 
-  def format_error({:invalid_message_handler_return, invalid_return}) do
+  def format_error({:invalid_script_return, invalid_return}) do
     """
-    invalid handler return #{inspect(invalid_return)}")
+    invalid script return #{inspect(invalid_return)}")
     expected one of:
       %Message{action: :say | :typing}
       {%Message{action: :say | :typing}, data}

@@ -7,19 +7,19 @@ defmodule Clover.Robot do
   @callback handle_connected(connection_state :: map, data :: data()) ::
               {:ok, data()} | {:error, Clover.Error}
   @callback init(arg :: any, data :: any) :: GenServer.on_start()
-  @callback message_handlers() :: [message_handler]
+  @callback scripts() :: [script]
 
   @optional_callbacks [
     handle_connected: 2,
     init: 2,
-    message_handlers: 0
+    scripts: 0
   ]
 
   alias Clover.{
     Adapter,
     Error,
     Message,
-    MessageHandler,
+    Script,
     User
   }
 
@@ -31,45 +31,45 @@ defmodule Clover.Robot do
   @type action :: GenStateMachine.action()
   @type actions :: [action]
   @type message_action :: :say | :reply | :emote
-  @type message_handler :: MessageHandler.t()
+  @type script :: Script.t()
   @type name :: String.t()
 
   defmodule Builder do
     @moduledoc false
 
-    defmacro handler(module, options \\ []) do
-      add_message_handler_module(module, options)
+    defmacro script(module, options \\ []) do
+      add_script_module(module, options)
     end
 
     defmacro overhear(pattern, function) when is_atom(function) do
-      add_message_handler(:overhear, pattern, {__CALLER__.module, function})
+      add_script(:overhear, pattern, {__CALLER__.module, function})
     end
 
     defmacro overhear(pattern, msg, match, data, do: block) do
-      handler = {__CALLER__.module, unique_handler_name()}
-      add_message_handler_block(:overhear, pattern, handler, msg, match, data, block)
+      script = {__CALLER__.module, unique_script_name()}
+      add_script_block(:overhear, pattern, script, msg, match, data, block)
     end
 
     defmacro respond(pattern, function) when is_atom(function) do
-      add_message_handler(:respond, pattern, {__CALLER__.module, function})
+      add_script(:respond, pattern, {__CALLER__.module, function})
     end
 
     defmacro respond(pattern, msg, match, data, do: block) do
-      handler = {__CALLER__.module, unique_handler_name()}
-      add_message_handler_block(:respond, pattern, handler, msg, match, data, block)
+      script = {__CALLER__.module, unique_script_name()}
+      add_script_block(:respond, pattern, script, msg, match, data, block)
     end
 
     @doc false
     defmacro __before_compile__(_env) do
       quote do
-        def message_handlers, do: @handlers
+        def scripts, do: @scripts
       end
     end
 
     @doc false
     defmacro __after_compile__(env, _bytecode) do
-      # Check {mod, fun} handlers and raise error if they are not defined
-      for %{respond: respond} <- Module.get_attribute(env.module, :handlers) do
+      # Check {mod, fun} scripts and raise error if they are not defined
+      for %{respond: respond} <- Module.get_attribute(env.module, :scripts) do
         case respond do
           {mod, fun} when is_atom(mod) and is_atom(fun) ->
             unless Module.defines?(mod, {fun, 3}) do
@@ -82,15 +82,15 @@ defmodule Clover.Robot do
       end
     end
 
-    defp add_message_handler(match_mode, pattern, handler) do
+    defp add_script(match_mode, pattern, script) do
       quote do
-        @handlers MessageHandler.new(unquote(match_mode), unquote(pattern), unquote(handler))
+        @scripts Script.new(unquote(match_mode), unquote(pattern), unquote(script))
       end
     end
 
-    defp add_message_handler_block(match_mode, pattern, {mod, fun}, msg, match, data, block) do
+    defp add_script_block(match_mode, pattern, {mod, fun}, msg, match, data, block) do
       quote do
-        @handlers MessageHandler.new(unquote(match_mode), unquote(pattern), unquote({mod, fun}))
+        @scripts Script.new(unquote(match_mode), unquote(pattern), unquote({mod, fun}))
 
         def unquote(fun)(unquote(msg), unquote(match), unquote(data)) do
           unquote(block)
@@ -98,14 +98,14 @@ defmodule Clover.Robot do
       end
     end
 
-    def add_message_handler_module(mod, _options) do
+    def add_script_module(mod, _options) do
       quote do
-        @handlers MessageHandler.new(:overhear, unquote(Macro.escape(~r/^.*$/)), unquote(mod))
+        @scripts Script.new(:overhear, unquote(Macro.escape(~r/^.*$/)), unquote(mod))
       end
     end
 
-    defp unique_handler_name do
-      String.to_atom("__handler_#{System.unique_integer([:positive, :monotonic])}__")
+    defp unique_script_name do
+      String.to_atom("__script_#{System.unique_integer([:positive, :monotonic])}__")
     end
   end
 
@@ -114,11 +114,11 @@ defmodule Clover.Robot do
       @behaviour Clover.Robot
 
       import Clover.Robot.Builder,
-        only: [handler: 1, handler: 2, overhear: 2, overhear: 5, respond: 2, respond: 5]
+        only: [script: 1, script: 2, overhear: 2, overhear: 5, respond: 2, respond: 5]
 
       import Clover.Message, only: [say: 2, say: 3, typing: 1, typing: 2]
 
-      Module.register_attribute(__MODULE__, :handlers, accumulate: true)
+      Module.register_attribute(__MODULE__, :scripts, accumulate: true)
 
       @before_compile Clover.Robot.Builder
       @after_compile Clover.Robot.Builder
