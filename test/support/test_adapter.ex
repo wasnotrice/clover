@@ -44,4 +44,17 @@ defmodule Clover.Test.TestAdapter do
 
   @impl Clover.Adapter
   def mention_format(%User{name: name}), do: ~r/(#{name})/
+
+  def normalize(text, %{robot: robot}) do
+    %Message{
+      robot: robot,
+      text: text,
+      user: %User{
+        id: "test",
+        name: "test"
+      }
+    }
+  end
+
+  def classify(%Message{} = message, _context), do: message
 end

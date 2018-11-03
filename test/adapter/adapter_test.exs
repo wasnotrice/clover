@@ -41,7 +41,11 @@ defmodule Clover.AdapterTest do
   end
 
   def start_adapter!(name, adapter, arg \\ []) do
-    child = Adapter.child_spec({name, adapter, arg}, name: Adapter.via_tuple(name))
+    child =
+      Adapter.child_spec({name, Clover.Test.TestRobot, adapter, arg},
+        name: Adapter.via_tuple(name)
+      )
+
     start_supervised!(child)
   end
 end

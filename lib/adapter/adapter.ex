@@ -9,6 +9,9 @@ defmodule Clover.Adapter do
     Robot
   }
 
+  alias Clover.Robot.MessageSupervisor
+
+  @type context :: map
   @type state :: map
 
   @doc """
@@ -16,9 +19,19 @@ defmodule Clover.Adapter do
 
   The `message` will be whatever was passed to Adapter.incoming. This will depend on the adapter.
   """
-  @callback handle_in({:message, any()}, state :: state, context :: map) :: {Message.t(), state}
-  @callback handle_out(message :: Message.t(), state :: state) :: {Message.t(), state}
-  @callback init(arg :: any, state :: state()) :: {:ok, state()}
+  @callback handle_in({:message, any()}, state, context) :: {Message.t(), state}
+  @callback handle_out(message :: Message.t(), state) :: {Message.t(), state}
+  @callback init(arg :: any, state) :: {:ok, state()}
+
+  @doc """
+  Converts a raw incoming message into a `Clover.Message` struct
+  """
+  @callback normalize({:message, any()}, context) :: Message.t()
+
+  @doc """
+  Classifies an incoming message by message type
+  """
+  @callback classify(Message.t(), context) :: Message.t()
 
   @doc """
   A regex for detecting any mention in message text. Optional.
@@ -32,7 +45,8 @@ defmodule Clover.Adapter do
 
   @optional_callbacks [
     init: 2,
-    mention_format: 0
+    mention_format: 0,
+    normalize: 2
   ]
 
   defmacro __using__(opts) do
@@ -56,7 +70,7 @@ defmodule Clover.Adapter do
   end
 
   @doc false
-  def init({robot, mod, arg}) do
+  def init({robot, robot_mod, mod, arg}) do
     cond do
       !function_exported?(mod, :handle_in, 3) ->
         {:stop, {:undef, mod, handle_in: 3}}
@@ -64,12 +78,16 @@ defmodule Clover.Adapter do
       !function_exported?(mod, :handle_out, 2) ->
         {:stop, {:undef, mod, handle_out: 2}}
 
+      !function_exported?(mod, :normalize, 2) ->
+        {:stop, {:undef, mod, normalize: 2}}
+
       true ->
         []
 
         state = %{
           mod: mod,
-          robot: robot
+          robot: robot,
+          robot_mod: robot_mod
         }
 
         if function_exported?(mod, :init, 2) do
@@ -120,7 +138,7 @@ defmodule Clover.Adapter do
   def handle_call({:connected, connection_state}, _from, %{robot: robot} = state) do
     log(:debug, "connected", inspect: connection_state)
     Robot.connected(robot, connection_state)
-    {:reply, :ok, state}
+    {:reply, :ok, Map.put(state, :me, Map.fetch!(connection_state, :me))}
   end
 
   @doc false
@@ -140,23 +158,20 @@ defmodule Clover.Adapter do
   end
 
   @doc false
-  def handle_cast({:incoming, {:message, message}, context}, %{mod: mod, robot: robot} = state) do
+  def handle_cast(
+        {:incoming, {:message, message}, context},
+        %{mod: mod, robot: robot, robot_mod: robot_mod, me: me} = state
+      ) do
     log(:debug, "incoming", inspect: {message, state})
 
-    if function_exported?(mod, :handle_in, 3) do
-      case mod.handle_in({:message, message}, state, context) do
-        {message, state} ->
-          log(:debug, "handled message", inspect: message)
-          Robot.incoming(robot, message)
-          {:noreply, state}
+    adapter_context = %{
+      adapter_mod: mod,
+      robot_mod: robot_mod,
+      adapter_context: Map.put(context, :me, me)
+    }
 
-        _ ->
-          log(:error, Clover.format_error({:unhandled_message, message}))
-      end
-    else
-      log(:error, Clover.format_error({:not_exported, {mod, :handle_in, 2}}))
-      {:noreply, state}
-    end
+    {:ok, _worker} = MessageSupervisor.dispatch(robot, message, adapter_context)
+    {:noreply, state}
   end
 
   @doc false

@@ -10,6 +10,7 @@ defmodule Clover.Message do
 
   defstruct action: nil,
             delay: nil,
+            halted?: false,
             robot: nil,
             room: nil,
             text: nil,
@@ -19,6 +20,7 @@ defmodule Clover.Message do
   @type t :: %__MODULE__{
           action: action | nil,
           delay: non_neg_integer | nil,
+          halted?: boolean,
           robot: String.t(),
           room: String.t() | nil,
           text: String.t(),

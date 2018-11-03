@@ -32,6 +32,57 @@ defmodule Clover.Robot.MessageWorker do
     |> handle_response(name)
   end
 
+  def run(
+        {name, raw_message, %{adapter_mod: adapter, robot_mod: robot, adapter_context: context}}
+      ) do
+    context =
+      context
+      |> Map.put(:robot, name)
+
+    message =
+      raw_message
+      |> normalize(adapter, context)
+      |> classify(adapter, context)
+
+    # |> Robot.assign_to_conversation_or_hear_new_message_or_handle_non_message_event(robot_mod)
+
+    run({name, robot, %{me: Map.fetch!(context, :me)}, message})
+
+    # |> Script.run_through_script()
+    # |> Adapter.send(adapter_mod)
+    # |> Adapter.format(adapter_mod)
+  end
+
+  def normalize(%Message{halted?: true} = message, _, _), do: message
+
+  def normalize(message, mod, context) do
+    apply(mod, :normalize, [message, context])
+  end
+
+  def classify(%Message{halted?: true} = message, _, _), do: message
+
+  def classify(message, mod, context) do
+    apply(mod, :classify, [message, context])
+
+    # if function_exported?(mod, :handle_in, 3) do
+    #   case mod.handle_in({:message, message}, state, context) do
+    #     {message, state} ->
+    #       log(:debug, "handled message", inspect: message)
+    #       Robot.incoming(robot, message)
+    #       {:noreply, state}
+
+    #     _ ->
+    #       log(:error, Clover.format_error({:unhandled_message, message}))
+    #   end
+    # else
+    #   log(:error, Clover.format_error({:not_exported, {mod, :handle_in, 2}}))
+    #   {:noreply, state}
+    # end
+  end
+
+  def incoming() do
+  end
+
   defp handle_response(handler_response, name) do
     log(:debug, "handle_response/2", inspect: handler_response)
 
