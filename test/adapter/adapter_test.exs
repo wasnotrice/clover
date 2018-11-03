@@ -1,5 +1,5 @@
 true = Code.ensure_loaded?(Clover.Test.TestAdapter)
-true = Code.ensure_loaded?(Clover.Test.NoHandleInAdapter)
+true = Code.ensure_loaded?(Clover.Test.NoNormalizeAdapter)
 true = Code.ensure_loaded?(Clover.Test.NoHandleOutAdapter)
 true = Code.ensure_loaded?(Clover.Test.NoInitAdapter)
 
@@ -9,14 +9,14 @@ defmodule Clover.AdapterTest do
   alias Clover.Adapter
 
   describe "bad adapters" do
-    test "when handle_in/3 is undefined, fails to start" do
+    test "when normalize/2 is undefined, fails to start" do
       name = "kelly a"
 
       assert_raise(
         RuntimeError,
-        ~r/failed to start.+Reason:.+:undef.+Clover.Test.NoHandleInAdapter.+handle_in: 3/ms,
+        ~r/failed to start.+Reason:.+:undef.+Clover.Test.NoNormalizeAdapter.+normalize: 2/ms,
         fn ->
-          start_adapter!(name, Clover.Test.NoHandleInAdapter)
+          start_adapter!(name, Clover.Test.NoNormalizeAdapter)
         end
       )
     end

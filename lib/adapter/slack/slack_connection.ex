@@ -5,6 +5,7 @@ defmodule Clover.Adapter.Slack.Connection do
 
   alias Clover.{
     Adapter,
+    Robot,
     User
   }
 
@@ -30,7 +31,7 @@ defmodule Clover.Adapter.Slack.Connection do
   end
 
   def handle_event(%{type: "message"} = message, slack, state) do
-    Adapter.incoming(state.robot, message, slack)
+    Robot.incoming(state.robot, message, slack)
     {:ok, state}
   end
 

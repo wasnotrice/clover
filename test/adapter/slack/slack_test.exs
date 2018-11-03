@@ -13,7 +13,7 @@ defmodule Clover.Adapter.SlackTest do
     }
   }
 
-  test "handle_in/3" do
+  test "normalize/2" do
     incoming = %{text: "hi there", user: @user_id, channel: "lobby", subtype: nil}
     state = %{robot: "alice s"}
 

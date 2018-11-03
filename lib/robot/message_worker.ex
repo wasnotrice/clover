@@ -18,36 +18,24 @@ defmodule Clover.Robot.MessageWorker do
     Task.start_link(__MODULE__, :run, [arg])
   end
 
-  def run({name, robot_mod, robot_data, message}) do
+  def run({name, robot_mod, robot_data, raw_message}) do
     handlers =
       if function_exported?(robot_mod, :scripts, 0),
         do: robot_mod.scripts(),
         else: []
 
     me = Map.get(robot_data, :me)
-    mention_format = Adapter.mention_format(name, me)
-
-    message
-    |> Script.handle_message(mention_format, robot_data, handlers)
-    |> handle_response(name)
-  end
-
-  def run(
-        {name, raw_message, %{adapter_mod: adapter, robot_mod: robot, adapter_context: context}}
-      ) do
-    context =
-      context
-      |> Map.put(:robot, name)
+    adapter = Map.fetch!(robot_data, :adapter)
+    mention_format = apply(adapter, :mention_format, [me])
 
     message =
       raw_message
-      |> normalize(adapter, context)
-      |> classify(adapter, context)
+      |> normalize(adapter, robot_data)
+      |> classify(adapter, robot_data)
+      |> Script.handle_message(mention_format, robot_data, handlers)
+      |> handle_response(name)
 
     # |> Robot.assign_to_conversation_or_hear_new_message_or_handle_non_message_event(robot_mod)
-
-    run({name, robot, %{me: Map.fetch!(context, :me)}, message})
-
     # |> Script.run_through_script()
     # |> Adapter.send(adapter_mod)
     # |> Adapter.format(adapter_mod)
@@ -63,24 +51,6 @@ defmodule Clover.Robot.MessageWorker do
 
   def classify(message, mod, context) do
     apply(mod, :classify, [message, context])
-
-    # if function_exported?(mod, :handle_in, 3) do
-    #   case mod.handle_in({:message, message}, state, context) do
-    #     {message, state} ->
-    #       log(:debug, "handled message", inspect: message)
-    #       Robot.incoming(robot, message)
-    #       {:noreply, state}
-
-    #     _ ->
-    #       log(:error, Clover.format_error({:unhandled_message, message}))
-    #   end
-    # else
-    #   log(:error, Clover.format_error({:not_exported, {mod, :handle_in, 2}}))
-    #   {:noreply, state}
-    # end
-  end
-
-  def incoming() do
   end
 
   defp handle_response(handler_response, name) do

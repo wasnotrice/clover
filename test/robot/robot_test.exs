@@ -12,7 +12,7 @@ defmodule Clover.RobotTest do
 
   test "robot responds to message" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "testbot ping", %{})
+    Robot.incoming(name, "testbot ping", %{})
     assert_receive({:say, "pong"})
   end
 
@@ -31,7 +31,7 @@ defmodule Clover.RobotTest do
 
   test "messages are handled in separate processes" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "testbot pid", %{})
+    Robot.incoming(name, "testbot pid", %{})
     assert_receive({:say, pid})
     refute pid_from_string(pid) == Clover.whereis_robot(name)
   end
@@ -40,7 +40,7 @@ defmodule Clover.RobotTest do
   test "crash in script doesn't crash robot" do
     name = start_robot!(TestRobot)
     robot = Clover.whereis_robot(name)
-    Adapter.incoming(name, "testbot crash", %{})
+    Robot.incoming(name, "testbot crash", %{})
     Process.sleep(10)
     assert Clover.whereis_robot(name) == robot
   end
@@ -48,64 +48,64 @@ defmodule Clover.RobotTest do
   @tag :capture_log
   test "bad return value in script is skipped" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "testbot bad return", %{})
+    Robot.incoming(name, "testbot bad return", %{})
     refute_receive({:say, "oops"})
     assert_receive({:say, "rescued bad return"})
   end
 
   test "supports named captures in match regex" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "testbot echo halloo down there!", %{})
+    Robot.incoming(name, "testbot echo halloo down there!", %{})
     assert_receive({:say, "halloo down there!"})
   end
 
   test "requires leading mention to match 'respond' script" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "echo halloo down there!", %{})
+    Robot.incoming(name, "echo halloo down there!", %{})
     refute_receive({:say, "halloo down there!"})
   end
 
   # Don't use the `type` script because its delay is too long :)
   test "emits typing event" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "testbot quicktype the quick brown fox", %{})
+    Robot.incoming(name, "testbot quicktype the quick brown fox", %{})
     assert_receive(:typing)
     assert_receive({:say, "the quick brown fox"})
   end
 
   test "supports block syntax for direct messages" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "testbot what time is it?", %{})
+    Robot.incoming(name, "testbot what time is it?", %{})
     assert_receive({:say, "4:30"})
   end
 
   test "supports block syntax for overheard messages" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "what day is it?", %{})
+    Robot.incoming(name, "what day is it?", %{})
     assert_receive({:say, "Every day is like Sunday"})
   end
 
   test "supports module syntax for scripts" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "testbot hex encode 255", %{})
+    Robot.incoming(name, "testbot hex encode 255", %{})
     assert_receive({:say, "FF"})
-    Adapter.incoming(name, "testbot hex encode my face", %{})
+    Robot.incoming(name, "testbot hex encode my face", %{})
     assert_receive({:say, ~s(I can't decode "my face". Is it an integer?)})
-    Adapter.incoming(name, "testbot hex decode ff", %{})
+    Robot.incoming(name, "testbot hex decode ff", %{})
     assert_receive({:say, "255"})
-    Adapter.incoming(name, "testbot hex decode fg", %{})
+    Robot.incoming(name, "testbot hex decode fg", %{})
     assert_receive({:say, ~s(I can't decode "fg". Is it a hex string?)})
   end
 
   test "supports overhearing" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "hello everyone", %{})
+    Robot.incoming(name, "hello everyone", %{})
     assert_receive({:say, "hi"})
   end
 
   test "runs scripts in the order they were declared" do
     name = start_robot!(TestRobot)
-    Adapter.incoming(name, "testbot echo ping", %{})
+    Robot.incoming(name, "testbot echo ping", %{})
     assert_receive({:say, "ping"})
   end
 

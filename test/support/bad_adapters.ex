@@ -15,7 +15,7 @@ end
 # Note these adapters do not adopt the Clover.Adapter behaviour because they do not implement it correctly
 # (which causes compiler warnings)
 
-defmodule Clover.Test.NoHandleInAdapter do
+defmodule Clover.Test.NoNormalizeAdapter do
   @moduledoc false
   import Clover.Test.Factory
 
@@ -28,13 +28,13 @@ defmodule Clover.Test.NoHandleOutAdapter do
   import Clover.Test.Factory
 
   def init(_, state), do: {:ok, state}
-  def handle_in(_, _, state), do: {:message, message(), state}
+  def normalize(_, state), do: message()
 end
 
 defmodule Clover.Test.NoInitAdapter do
   @moduledoc false
   import Clover.Test.Factory
 
-  def handle_in(_, _, state), do: {:message, message(), state}
+  def normalize(_, state), do: message()
   def handle_out(_, state), do: {:sent, message(), state}
 end

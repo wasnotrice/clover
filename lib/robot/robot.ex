@@ -143,14 +143,15 @@ defmodule Clover.Robot do
   end
 
   @doc false
-  def init({name, mod, arg}) do
+  def init({name, {mod, arg}, adapter_mod}) do
     Process.flag(:trap_exit, true)
 
     state = :uninitialized
 
     data = %{
       mod: mod,
-      name: name
+      name: name,
+      adapter: adapter_mod
     }
 
     {:ok, data} =
@@ -178,7 +179,7 @@ defmodule Clover.Robot do
     call(robot_name, :name)
   end
 
-  def incoming(robot_name, message) do
+  def incoming(robot_name, message, _context \\ %{}) do
     cast(robot_name, {:incoming, message})
   end
 
@@ -211,9 +212,12 @@ defmodule Clover.Robot do
   end
 
   @doc false
-  def handle_event(:cast, {:incoming, message}, _state, %{mod: mod, name: name} = data) do
+  def handle_event(:cast, {:incoming, message}, _state, %{name: name, mod: mod} = data) do
     log(:debug, "message", inspect: message)
-    {:ok, _worker} = MessageSupervisor.dispatch(name, mod, data, message)
+
+    worker_data = %{robot: name, robot_mod: mod, adapter: data.adapter, me: data.me}
+
+    {:ok, _worker} = MessageSupervisor.dispatch(name, mod, worker_data, message)
     :keep_state_and_data
   end
 

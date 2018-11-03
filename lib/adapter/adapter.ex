@@ -9,17 +9,9 @@ defmodule Clover.Adapter do
     Robot
   }
 
-  alias Clover.Robot.MessageSupervisor
-
   @type context :: map
   @type state :: map
 
-  @doc """
-  Handler for incoming messages
-
-  The `message` will be whatever was passed to Adapter.incoming. This will depend on the adapter.
-  """
-  @callback handle_in({:message, any()}, state, context) :: {Message.t(), state}
   @callback handle_out(message :: Message.t(), state) :: {Message.t(), state}
   @callback init(arg :: any, state) :: {:ok, state()}
 
@@ -72,9 +64,6 @@ defmodule Clover.Adapter do
   @doc false
   def init({robot, robot_mod, mod, arg}) do
     cond do
-      !function_exported?(mod, :handle_in, 3) ->
-        {:stop, {:undef, mod, handle_in: 3}}
-
       !function_exported?(mod, :handle_out, 2) ->
         {:stop, {:undef, mod, handle_out: 2}}
 
@@ -106,18 +95,6 @@ defmodule Clover.Adapter do
     cast(robot_name, {:outgoing, message})
   end
 
-  def incoming(robot_name, message, context) do
-    cast(robot_name, {:incoming, {:message, message}, context})
-  end
-
-  def mention_format(robot_name) do
-    call(robot_name, {:mention_format})
-  end
-
-  def mention_format(robot_name, user) do
-    call(robot_name, {:mention_format, user})
-  end
-
   defp call(robot_name, message) do
     robot_name
     |> Clover.whereis_robot_adapter()
@@ -139,39 +116,6 @@ defmodule Clover.Adapter do
     log(:debug, "connected", inspect: connection_state)
     Robot.connected(robot, connection_state)
     {:reply, :ok, Map.put(state, :me, Map.fetch!(connection_state, :me))}
-  end
-
-  @doc false
-  def handle_call(:mention_format, _from, %{mod: mod} = state) do
-    format =
-      if function_exported?(mod, :mention_format, 0),
-        do: mod.mention_format(),
-        else: nil
-
-    {:reply, format, state}
-  end
-
-  @doc false
-  def handle_call({:mention_format, user}, _from, %{mod: mod} = state) do
-    format = mod.mention_format(user)
-    {:reply, format, state}
-  end
-
-  @doc false
-  def handle_cast(
-        {:incoming, {:message, message}, context},
-        %{mod: mod, robot: robot, robot_mod: robot_mod, me: me} = state
-      ) do
-    log(:debug, "incoming", inspect: {message, state})
-
-    adapter_context = %{
-      adapter_mod: mod,
-      robot_mod: robot_mod,
-      adapter_context: Map.put(context, :me, me)
-    }
-
-    {:ok, _worker} = MessageSupervisor.dispatch(robot, message, adapter_context)
-    {:noreply, state}
   end
 
   @doc false
