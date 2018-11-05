@@ -21,7 +21,10 @@ defmodule Clover.Message do
           action: action | nil,
           delay: non_neg_integer | nil,
           halted?: boolean,
-          robot: String.t(),
+          robot: %{
+            name: String.t(),
+            user: User.t()
+          },
           room: String.t() | nil,
           text: String.t(),
           type: String.t() | nil,

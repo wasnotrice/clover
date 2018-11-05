@@ -151,7 +151,8 @@ defmodule Clover.Robot do
     data = %{
       mod: mod,
       name: name,
-      adapter: adapter_mod
+      adapter: adapter_mod,
+      me: nil
     }
 
     {:ok, data} =
@@ -177,6 +178,13 @@ defmodule Clover.Robot do
 
   def name(robot_name) do
     call(robot_name, :name)
+  end
+
+  @spec scripts(robot :: module) :: []
+  def scripts(robot) do
+    if function_exported?(robot, :scripts, 0),
+      do: robot.scripts(),
+      else: []
   end
 
   def incoming(robot_name, message, _context \\ %{}) do
@@ -211,13 +219,35 @@ defmodule Clover.Robot do
     log(:info, "terminate", inspect: reason)
   end
 
+  defp normalize(%Message{halted?: true} = message, _, _), do: message
+
+  defp normalize(message, mod, context) do
+    apply(mod, :normalize, [message, context])
+  end
+
+  defp classify(%Message{halted?: true} = message, _, _), do: message
+
+  defp classify(message, mod, context) do
+    apply(mod, :classify, [message, context])
+  end
+
   @doc false
-  def handle_event(:cast, {:incoming, message}, _state, %{name: name, mod: mod} = data) do
-    log(:debug, "message", inspect: message)
+  def handle_event(
+        :cast,
+        {:incoming, raw_message},
+        _state,
+        %{name: name, mod: mod, adapter: adapter} = data
+      ) do
+    log(:debug, "message", inspect: raw_message)
 
-    worker_data = %{robot: name, robot_mod: mod, adapter: data.adapter, me: data.me}
+    message =
+      raw_message
+      |> normalize(adapter, data)
+      |> classify(adapter, data)
 
-    {:ok, _worker} = MessageSupervisor.dispatch(name, mod, worker_data, message)
+    {:ok, _worker} =
+      MessageSupervisor.dispatch(name, message, %{robot: mod, adapter: data.adapter})
+
     :keep_state_and_data
   end
 
@@ -240,10 +270,9 @@ defmodule Clover.Robot do
     log(:debug, "connected", inspect: connection_state)
 
     data =
-      case Map.get(connection_state, :me) do
-        %User{} = me -> Map.put(data, :me, me)
-        _ -> data
-      end
+      data
+      |> put_connection(connection_state)
+      |> put_me(connection_state)
 
     if function_exported?(mod, :handle_connected, 2) do
       case mod.handle_connected(connection_state, data) do
@@ -270,6 +299,19 @@ defmodule Clover.Robot do
   @doc false
   def handle_event(_type, _event, _state, _data) do
     :keep_state_and_data
+  end
+
+  # State handling
+
+  defp put_me(data, connection_state) do
+    case Map.get(connection_state, :me) do
+      %User{} = me -> Map.put(data, :me, me)
+      _ -> Map.put(data, :me, nil)
+    end
+  end
+
+  defp put_connection(data, connection_state) do
+    Map.put(data, :connection, connection_state)
   end
 
   defp log(level, message, opts) do

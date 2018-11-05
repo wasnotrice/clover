@@ -28,13 +28,13 @@ defmodule Clover.Test.NoHandleOutAdapter do
   import Clover.Test.Factory
 
   def init(_, state), do: {:ok, state}
-  def normalize(_, state), do: message()
+  def normalize(_, _), do: message()
 end
 
 defmodule Clover.Test.NoInitAdapter do
   @moduledoc false
   import Clover.Test.Factory
 
-  def normalize(_, state), do: message()
+  def normalize(_, _), do: message()
   def handle_out(_, state), do: {:sent, message(), state}
 end

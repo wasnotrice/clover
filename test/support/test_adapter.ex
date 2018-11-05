@@ -6,15 +6,15 @@ defmodule Clover.Test.TestAdapter do
   use Clover.Adapter
 
   alias Clover.{
-    Adapter,
     Message,
+    Robot,
     User
   }
 
   @impl Clover.Adapter
   def init(opts, %{robot: robot} = state) do
     sink = Keyword.fetch!(opts, :sink)
-    spawn(fn -> Adapter.connected(robot, %{me: %User{id: "testbot", name: "testbot"}}) end)
+    spawn(fn -> Robot.connected(robot, %{me: %User{id: "testbot", name: "testbot"}}) end)
     {:ok, Map.merge(state, %{sink: sink})}
   end
 
@@ -31,9 +31,12 @@ defmodule Clover.Test.TestAdapter do
   def mention_format(%User{name: name}), do: ~r/(#{name})/
 
   @impl Clover.Adapter
-  def normalize(text, %{robot: robot}) do
+  def normalize(text, %{me: me, name: name}) do
     %Message{
-      robot: robot,
+      robot: %{
+        name: name,
+        user: me
+      },
       text: text,
       user: %User{
         id: "test",

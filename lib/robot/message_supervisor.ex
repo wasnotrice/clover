@@ -17,14 +17,13 @@ defmodule Clover.Robot.MessageSupervisor do
   - `context` is arbitrary adapter-specific context
   """
   @spec dispatch(name :: String.t(), message :: any, %{
-          robot_mod: module,
-          adapter_mod: module,
-          adapter_context: map
+          robot: module,
+          adapter: module
         }) :: DynamicSupervisor.on_start_child()
   def dispatch(name, message, context) do
     DynamicSupervisor.start_child(
       via_tuple(name),
-      {MessageWorker, {name, message, context}}
+      {MessageWorker, {message, context}}
     )
   end
 

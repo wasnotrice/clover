@@ -4,7 +4,6 @@ defmodule Clover.Adapter.Slack.Connection do
   use Slack
 
   alias Clover.{
-    Adapter,
     Robot,
     User
   }
@@ -21,7 +20,7 @@ defmodule Clover.Adapter.Slack.Connection do
       }
     }
 
-    Adapter.connected(state.robot, connection_state)
+    Robot.connected(state.robot, connection_state)
     {:ok, state}
   end
 

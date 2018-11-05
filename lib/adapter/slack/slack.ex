@@ -23,7 +23,7 @@ defmodule Clover.Adapter.Slack do
   end
 
   @impl Clover.Adapter
-  def normalize({:message, message}, context) do
+  def normalize(message, context) do
     __MODULE__.Message.from_external(message, context.robot, context)
   end
 

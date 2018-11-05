@@ -7,7 +7,7 @@ defmodule Clover.RobotTest do
   use ExUnit.Case, async: true
 
   alias Clover.Test.{TestAdapter, TestRobot}
-  alias Clover.{Adapter, Message, Robot, User}
+  alias Clover.{Message, Robot, User}
   alias Clover.Robot.Supervisor, as: RobotSupervisor
 
   test "robot responds to message" do
@@ -25,7 +25,7 @@ defmodule Clover.RobotTest do
   test "robot receives name" do
     name = start_robot!(TestRobot)
     robot_user = %User{id: "alice", name: "alice"}
-    Adapter.connected(name, %{me: robot_user})
+    Robot.connected(name, %{me: robot_user})
     assert Robot.name(name) == "alice"
   end
 

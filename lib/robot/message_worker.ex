@@ -1,6 +1,6 @@
 defmodule Clover.Robot.MessageWorker do
   @moduledoc """
-  A worker for handling an individual message
+  A worker that handles an individual message
   """
 
   use Task
@@ -8,8 +8,8 @@ defmodule Clover.Robot.MessageWorker do
   alias Clover.{
     Adapter,
     Message,
-    Script,
-    Robot
+    Robot,
+    Script
   }
 
   alias Clover.Util.Logger
@@ -18,39 +18,17 @@ defmodule Clover.Robot.MessageWorker do
     Task.start_link(__MODULE__, :run, [arg])
   end
 
-  def run({name, robot_mod, robot_data, raw_message}) do
-    handlers =
-      if function_exported?(robot_mod, :scripts, 0),
-        do: robot_mod.scripts(),
-        else: []
-
-    me = Map.get(robot_data, :me)
-    adapter = Map.fetch!(robot_data, :adapter)
+  def run({message, %{robot: robot, adapter: adapter}}) do
+    scripts = Robot.scripts(robot)
+    %{name: name, user: me} = Map.get(message, :robot)
     mention_format = apply(adapter, :mention_format, [me])
 
-    message =
-      raw_message
-      |> normalize(adapter, robot_data)
-      |> classify(adapter, robot_data)
-      |> Script.handle_message(mention_format, robot_data, handlers)
-      |> handle_response(name)
+    # Need to get conversation data out of a conversation
+    conversation_data = %{}
 
-    # |> Robot.assign_to_conversation_or_hear_new_message_or_handle_non_message_event(robot_mod)
-    # |> Script.run_through_script()
-    # |> Adapter.send(adapter_mod)
-    # |> Adapter.format(adapter_mod)
-  end
-
-  def normalize(%Message{halted?: true} = message, _, _), do: message
-
-  def normalize(message, mod, context) do
-    apply(mod, :normalize, [message, context])
-  end
-
-  def classify(%Message{halted?: true} = message, _, _), do: message
-
-  def classify(message, mod, context) do
-    apply(mod, :classify, [message, context])
+    message
+    |> Script.handle_message(mention_format, conversation_data, scripts)
+    |> handle_response(name)
   end
 
   defp handle_response(handler_response, name) do

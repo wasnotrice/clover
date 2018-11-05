@@ -22,21 +22,30 @@ defmodule Clover.Adapter.Slack.MessageTest do
     }
   end
 
-  def slack_state do
+  def robot_context do
     %{
       me: %{
-        id: "U9U9U9U9U"
+        id: "U9U9U9U9U",
+        name: "testbot"
       },
-      users: %{}
+      connection: %{
+        users: %{}
+      }
     }
   end
 
   test "from_external" do
-    message = Slack.Message.from_external(slack_message(), "alice", slack_state())
+    message = Slack.Message.from_external(slack_message(), "alice", robot_context())
 
     assert message == %Message{
              room: "C3C3C3C3C",
-             robot: "alice",
+             robot: %{
+               name: "alice",
+               user: %{
+                 id: "U9U9U9U9U",
+                 name: "testbot"
+               }
+             },
              text: "<@U9U9U9U9U> hi",
              type: nil,
              user: %User{

@@ -5,8 +5,7 @@ defmodule Clover.Adapter do
   use GenServer
 
   alias Clover.{
-    Message,
-    Robot
+    Message
   }
 
   @type context :: map
@@ -18,7 +17,8 @@ defmodule Clover.Adapter do
   @doc """
   Converts a raw incoming message into a `Clover.Message` struct
   """
-  @callback normalize({:message, any()}, context) :: Message.t()
+
+  @callback normalize(message :: any(), context) :: Message.t()
 
   @doc """
   Classifies an incoming message by message type
@@ -38,7 +38,7 @@ defmodule Clover.Adapter do
   @optional_callbacks [
     init: 2,
     mention_format: 0,
-    normalize: 2
+    classify: 2
   ]
 
   defmacro __using__(opts) do
@@ -87,19 +87,15 @@ defmodule Clover.Adapter do
     end
   end
 
-  def connected(robot_name, state) do
-    call(robot_name, {:connected, state})
-  end
-
   def outgoing(robot_name, message) do
     cast(robot_name, {:outgoing, message})
   end
 
-  defp call(robot_name, message) do
-    robot_name
-    |> Clover.whereis_robot_adapter()
-    |> GenServer.call(message)
-  end
+  # defp call(robot_name, message) do
+  #   robot_name
+  #   |> Clover.whereis_robot_adapter()
+  #   |> GenServer.call(message)
+  # end
 
   defp cast(robot_name, message) do
     robot_name
@@ -109,13 +105,6 @@ defmodule Clover.Adapter do
 
   def via_tuple(robot_name) do
     {:via, Registry, {Clover.registry(), {robot_name, :adapter}}}
-  end
-
-  @doc false
-  def handle_call({:connected, connection_state}, _from, %{robot: robot} = state) do
-    log(:debug, "connected", inspect: connection_state)
-    Robot.connected(robot, connection_state)
-    {:reply, :ok, Map.put(state, :me, Map.fetch!(connection_state, :me))}
   end
 
   @doc false

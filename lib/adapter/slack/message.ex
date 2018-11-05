@@ -11,15 +11,18 @@ defmodule Clover.Adapter.Slack.Message do
 
   @impl Clover.Adapter.Message
   def from_external(slack, robot, context) do
-    user_id = slack[:user]
-    text = slack[:text]
+    %{user: user_id, text: text} = slack
+    %{me: me, connection: connection} = context
 
     %Message{
-      robot: robot,
+      robot: %{
+        name: robot,
+        user: me
+      },
       room: slack[:channel],
       text: text,
       type: slack[:subtype],
-      user: %User{id: user_id, name: get_in(context, [:users, user_id, :name])}
+      user: %User{id: user_id, name: get_in(connection, [:users, user_id, :name])}
     }
   end
 
