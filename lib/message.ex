@@ -2,15 +2,23 @@ defmodule Clover.Message do
   @moduledoc """
   A Clover message
   """
-  alias Clover.User
+  alias Clover.{
+    Conversation,
+    User
+  }
 
   @type action :: :say | :typing
   @type mention :: {start :: non_neg_integer, length :: non_neg_integer}
   @type mentions :: %{required(String.t()) => mention}
+  @type mention_format :: nil | Regex.t() | [Regex.t()]
 
   defstruct action: nil,
+            conversation: nil,
             delay: nil,
             halted?: false,
+            me: nil,
+            mention_format_any: nil,
+            mention_format_me: nil,
             robot: nil,
             room: nil,
             text: nil,
@@ -19,17 +27,57 @@ defmodule Clover.Message do
 
   @type t :: %__MODULE__{
           action: action | nil,
+          conversation: Conversation.t() | nil,
           delay: non_neg_integer | nil,
           halted?: boolean,
-          robot: %{
-            name: String.t(),
-            user: User.t()
-          },
+          me: User.t() | nil,
+          mention_format_any: mention_format,
+          mention_format_me: mention_format,
+          robot: String.t(),
           room: String.t() | nil,
           text: String.t(),
           type: String.t() | nil,
           user: User.t()
         }
+
+  def new(attrs) do
+    struct(
+      __MODULE__,
+      Map.take(attrs, [
+        :me,
+        :mention_format_any,
+        :mention_format_me,
+        :robot,
+        :room,
+        :text,
+        :type,
+        :user
+      ])
+    )
+  end
+
+  def me(%__MODULE__{me: me}), do: me
+
+  def mention_format(%__MODULE__{mention_format_any: format}, :any), do: format
+
+  def mention_format(%__MODULE__{mention_format_me: format}, :me), do: format
+
+  def robot(%__MODULE__{robot: robot}), do: robot
+
+  def room(%__MODULE__{room: room}), do: room
+
+  def text(%__MODULE__{text: text}), do: text
+
+  def type(%__MODULE__{type: type}), do: type
+
+  def user(%__MODULE__{user: user}), do: user
+
+  @doc """
+  Assign a conversation
+  """
+  def put_conversation(%__MODULE__{} = message, conversation) do
+    Map.put(message, :conversation, conversation)
+  end
 
   @doc """
   Scan the text of `message` for mentions, using `regex`.

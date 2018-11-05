@@ -228,7 +228,11 @@ defmodule Clover.Robot do
   defp classify(%Message{halted?: true} = message, _, _), do: message
 
   defp classify(message, mod, context) do
-    apply(mod, :classify, [message, context])
+    if function_exported?(mod, :classify, 2) do
+      apply(mod, :classify, [message, context])
+    else
+      message
+    end
   end
 
   @doc false

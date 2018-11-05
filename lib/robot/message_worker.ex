@@ -7,9 +7,9 @@ defmodule Clover.Robot.MessageWorker do
 
   alias Clover.{
     Adapter,
+    Conversation,
     Message,
-    Robot,
-    Script
+    Robot
   }
 
   alias Clover.Util.Logger
@@ -18,32 +18,45 @@ defmodule Clover.Robot.MessageWorker do
     Task.start_link(__MODULE__, :run, [arg])
   end
 
-  def run({message, %{robot: robot, adapter: adapter}}) do
+  def run({message, %{robot: robot}}) do
     scripts = Robot.scripts(robot)
-    %{name: name, user: me} = Map.get(message, :robot)
-    mention_format = apply(adapter, :mention_format, [me])
-
-    # Need to get conversation data out of a conversation
-    conversation_data = %{}
+    robot = Message.robot(message)
 
     message
-    |> Script.handle_message(mention_format, conversation_data, scripts)
-    |> handle_response(name)
+    |> assign_conversation()
+    |> handle_message(scripts)
+    |> handle_response(robot)
   end
 
-  defp handle_response(handler_response, name) do
-    log(:debug, "handle_response/2", inspect: handler_response)
+  defp assign_conversation(message) do
+    Message.put_conversation(message, Clover.whereis_conversation(message))
+  end
 
-    case handler_response do
+  defp handle_message(%Message{conversation: nil} = message, scripts) do
+    {:ok, conversation} = Conversation.start(message)
+
+    message
+    |> Message.put_conversation(conversation)
+    |> handle_message(scripts)
+  end
+
+  defp handle_message(%Message{} = message, scripts) do
+    Conversation.incoming(message, scripts)
+  end
+
+  defp handle_response(response, robot) do
+    log(:debug, "handle_response/2", inspect: response)
+
+    case response do
       %Message{} = reply ->
-        dispatch(name, reply)
+        dispatch(robot, reply)
 
       # Worker could send data update back to robot
       {%Message{} = reply, _new_data} ->
-        dispatch(name, reply)
+        dispatch(robot, reply)
 
       messages when is_list(messages) ->
-        Enum.each(messages, &dispatch(name, &1))
+        Enum.each(messages, &dispatch(robot, &1))
 
       _ ->
         :ok

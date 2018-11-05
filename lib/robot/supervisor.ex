@@ -6,6 +6,7 @@ defmodule Clover.Robot.Supervisor do
     Robot
   }
 
+  alias Clover.Conversation.Supervisor, as: ConversationSupervisor
   alias Clover.Robot.MessageSupervisor
 
   def start_link(arg, opts) do
@@ -18,7 +19,8 @@ defmodule Clover.Robot.Supervisor do
       Adapter.child_spec({name, robot_mod, adapter_mod, adapter_arg},
         name: Adapter.via_tuple(name)
       ),
-      {DynamicSupervisor, name: MessageSupervisor.via_tuple(name), strategy: :one_for_one}
+      {DynamicSupervisor, name: MessageSupervisor.via_tuple(name), strategy: :one_for_one},
+      {DynamicSupervisor, name: ConversationSupervisor.via_tuple(name), strategy: :one_for_one}
     ]
 
     Supervisor.init(children, strategy: :rest_for_one)

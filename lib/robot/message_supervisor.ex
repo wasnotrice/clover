@@ -3,23 +3,15 @@ defmodule Clover.Robot.MessageSupervisor do
 
   alias Clover.Robot.MessageWorker
 
-  def dispatch(name, robot_mod, robot_data, message) do
-    DynamicSupervisor.start_child(
-      via_tuple(name),
-      {MessageWorker, {name, robot_mod, robot_data, message}}
-    )
-  end
-
   @doc """
   Dispatch a raw incoming message to a worker process
 
   - `message` is the raw message received by the adapter
-  - `context` is arbitrary adapter-specific context
+  - `robot` is the robot module
+  - `adapter` is the adapter module
   """
-  @spec dispatch(name :: String.t(), message :: any, %{
-          robot: module,
-          adapter: module
-        }) :: DynamicSupervisor.on_start_child()
+  @spec dispatch(name :: String.t(), message :: any, %{robot: module, adapter: module}) ::
+          DynamicSupervisor.on_start_child()
   def dispatch(name, message, context) do
     DynamicSupervisor.start_child(
       via_tuple(name),

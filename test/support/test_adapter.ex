@@ -32,17 +32,17 @@ defmodule Clover.Test.TestAdapter do
 
   @impl Clover.Adapter
   def normalize(text, %{me: me, name: name}) do
-    %Message{
-      robot: %{
-        name: name,
-        user: me
-      },
+    Message.new(%{
+      me: me,
+      mention_format_any: nil,
+      mention_format_me: mention_format(me),
+      robot: name,
       text: text,
       user: %User{
         id: "test",
         name: "test"
       }
-    }
+    })
   end
 
   @impl Clover.Adapter

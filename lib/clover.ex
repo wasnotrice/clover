@@ -5,6 +5,8 @@ defmodule Clover do
 
   use Application
 
+  alias Clover.Message
+
   @registry Clover.Registry
   @robot_supervisor Clover.Robots
 
@@ -62,6 +64,17 @@ defmodule Clover do
   end
 
   def registry, do: @registry
+
+  def whereis_conversation(message) do
+    robot = Message.robot(message)
+    room = Message.room(message)
+    user = Message.user(message)
+
+    case Registry.lookup(@registry, {robot, :conversation, room, user}) do
+      [{pid, _}] -> pid
+      [] -> nil
+    end
+  end
 
   def whereis_robot(robot) do
     case Registry.lookup(@registry, robot) do

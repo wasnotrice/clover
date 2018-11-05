@@ -38,29 +38,28 @@ defmodule Clover.Script do
 
   # Descends into the list of scripts, attempting to match the last script first, to preserve the order in which
   # scripts were declared
-  @spec handle_message(Message.t(), mention_format :: Regex.t(), data :: map, [t()] | atom) ::
-          response()
-  def handle_message(_message, _mention_format, _data, []), do: :noreply
+  @spec handle_message(Message.t(), data :: map, [t()] | atom) :: response()
+  def handle_message(_message, _data, []), do: :noreply
 
-  def handle_message(message, mention_format, data, [script | []]),
-    do: handle(script, message, mention_format, data)
+  def handle_message(message, data, [script | []]),
+    do: handle(script, message, data)
 
-  def handle_message(message, mention_format, data, [script | tail]) do
-    case handle_message(message, mention_format, data, tail) do
-      :nomatch -> handle(script, message, mention_format, data)
+  def handle_message(message, data, [script | tail]) do
+    case handle_message(message, data, tail) do
+      :nomatch -> handle(script, message, data)
       reply -> reply
     end
   end
 
-  @spec handle(t, Message.t(), Regex.t(), data) :: response
+  @spec handle(t, Message.t(), data) :: response
   # If the script is a module, then skip the match and try all of the modules scripts
-  def handle(%__MODULE__{respond: mod}, %Message{} = message, mention_format, data)
+  def handle(%__MODULE__{respond: mod}, %Message{} = message, data)
       when is_atom(mod) do
-    handle_message(message, mention_format, data, mod.scripts())
+    handle_message(message, data, mod.scripts())
   end
 
-  def handle(%__MODULE__{} = script, %Message{} = message, mention_format, data) do
-    case match(script, message, mention_format) do
+  def handle(%__MODULE__{} = script, %Message{} = message, data) do
+    case match(script, message) do
       nil ->
         :nomatch
 
@@ -81,20 +80,22 @@ defmodule Clover.Script do
     end
   end
 
-  def match(%__MODULE__{match_mode: :overhear} = script, message, _mention_format) do
-    match(script, message)
+  def match(%__MODULE__{match_mode: :overhear} = script, message) do
+    match(script.match, message)
   end
 
-  def match(%__MODULE__{match_mode: :respond} = script, message, mention_format) do
+  def match(%__MODULE__{match_mode: :respond} = script, message) do
     original_text = message.text
+
+    mention_format = Message.mention_format(message, :me)
 
     case Message.trim_leading_mention(message, mention_format) do
       %{text: ^original_text} -> nil
-      trimmed -> match(script, trimmed)
+      trimmed -> match(script.match, trimmed)
     end
   end
 
-  def match(%__MODULE__{match: regex}, %Message{text: text}) do
+  def match(%Regex{} = regex, %Message{text: text}) do
     case Regex.run(regex, text) do
       nil -> nil
       captures -> %{captures: captures, named_captures: Regex.named_captures(regex, text)}
