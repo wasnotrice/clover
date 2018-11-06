@@ -59,7 +59,9 @@ defmodule Clover.Conversation do
   end
 
   def handle_call({:incoming, message}, _from, state) do
-    {response, state} = handle_incoming(message, state)
+    response = Script.handle_message(message, state, state.scripts)
+    transcript = [response, message | state.transcript]
+    state = Map.put(state, :transcript, transcript)
     {:reply, response, state}
   end
 
@@ -69,17 +71,6 @@ defmodule Clover.Conversation do
 
   def handle_call(:transcript, _from, %{transcript: transcript} = state) do
     {:reply, transcript, state}
-  end
-
-  def handle_info({:after_init, message}, state) do
-    {_response, state} = handle_incoming(message, state)
-    {:noreply, state}
-  end
-
-  defp handle_incoming(message, state) do
-    response = Script.handle_message(message, %{}, state.scripts)
-    transcript = [response, message | state.transcript]
-    {response, Map.put(state, :transcript, transcript)}
   end
 
   def via_tuple(message) do

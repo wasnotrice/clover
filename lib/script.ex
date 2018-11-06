@@ -52,7 +52,7 @@ defmodule Clover.Script do
   end
 
   @spec handle(t, Message.t(), data) :: response
-  # If the script is a module, then skip the match and try all of the modules scripts
+  # If the script is a module, then skip the match and try all of the module's scripts
   def handle(%__MODULE__{respond: mod}, %Message{} = message, data)
       when is_atom(mod) do
     handle_message(message, data, mod.scripts())

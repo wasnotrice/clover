@@ -5,6 +5,9 @@ defmodule Clover.Test.TestRobot do
 
   use Clover.Robot
 
+  alias Clover.Message
+  alias Clover.Robot.Brain
+
   def init(_arg, data) do
     {:ok, data}
   end
@@ -17,6 +20,7 @@ defmodule Clover.Test.TestRobot do
   respond ~r/^pid$/, :pid_script
   respond ~r/^bad return$/, :bad_return_script
   respond ~r/^bad return$/, :bad_return_rescue
+  respond ~r/^what number/, :store_number_script
   respond ~r/^crash$/, :crash_script
   respond ~r/^echo\s+(?<text>.*)$/, :echo_script
   respond ~r/ping/, :ping_script
@@ -64,6 +68,13 @@ defmodule Clover.Test.TestRobot do
 
   def bad_return_rescue(message, _match, _data) do
     say(message, "rescued bad return")
+  end
+
+  def store_number_script(message, _match, _data) do
+    number = Brain.get(message, :number) || 0
+    Brain.put(message, :number, number + 1)
+
+    say(message, "you are number #{number + 1}")
   end
 
   def echo_script(message, %{named_captures: %{"text" => text}}, data) do

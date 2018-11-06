@@ -180,6 +180,21 @@ defmodule Clover.Robot do
     call(robot_name, :name)
   end
 
+  @doc false
+  def assigns(robot_name) do
+    call(robot_name, :assigns)
+  end
+
+  @doc false
+  def put_assign(robot_name, key, value) do
+    call(robot_name, {:put_assign, key, value})
+  end
+
+  @doc false
+  def get_assign(robot_name, key) do
+    call(robot_name, {:get_assign, key})
+  end
+
   @spec scripts(robot :: module) :: []
   def scripts(robot) do
     if function_exported?(robot, :scripts, 0),
@@ -274,6 +289,29 @@ defmodule Clover.Robot do
   def handle_event({:call, from}, :name, _state, data) do
     %User{name: name} = Map.get(data, :me, %User{})
     {:keep_state_and_data, [{:reply, from, name}]}
+  end
+
+  @doc false
+  def handle_event({:call, from}, :assigns, _state, data) do
+    {:keep_state_and_data, [{:reply, from, Map.get(data, :assigns, %{})}]}
+  end
+
+  @doc false
+  def handle_event({:call, from}, {:put_assign, key, value}, _state, data) do
+    assigns =
+      data
+      |> Map.get(:assigns, %{})
+      |> Map.put(key, value)
+
+    data = Map.put(data, :assigns, assigns)
+    {:keep_state, data, [{:reply, from, value}]}
+  end
+
+  @doc false
+  def handle_event({:call, from}, {:get_assign, key}, _state, data) do
+    assigns = Map.get(data, :assigns, %{})
+    value = Map.get(assigns, key)
+    {:keep_state_and_data, [{:reply, from, value}]}
   end
 
   @doc false

@@ -59,6 +59,15 @@ defmodule Clover.RobotTest do
     assert_receive({:say, "halloo down there!"})
   end
 
+  test "stores value in robot state" do
+    name = start_robot!(TestRobot)
+    Robot.incoming(name, "testbot what number am I?")
+    assert_receive({:say, "you are number 1"})
+    assert Robot.assigns(name).number == 1
+    Robot.incoming(name, "testbot what number am I?")
+    assert_receive({:say, "you are number 2"})
+  end
+
   test "requires leading mention to match 'respond' script" do
     name = start_robot!(TestRobot)
     Robot.incoming(name, "echo halloo down there!", %{})
