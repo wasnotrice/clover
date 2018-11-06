@@ -48,17 +48,15 @@ defmodule Clover.Robot.MessageWorker do
   end
 
   defp handle_message(%Message{conversation: nil} = message, %{robot: robot} = context) do
-    scripts = Robot.scripts(robot)
-
-    {:ok, conversation} = Conversation.start(message, scripts)
+    {:ok, conversation} = Conversation.start(message, robot)
 
     message
     |> Message.put_conversation(conversation)
     |> handle_message(context)
   end
 
-  defp handle_message(%Message{} = message, _context) do
-    Conversation.incoming(message)
+  defp handle_message(%Message{conversation: conversation} = message, _context) do
+    Conversation.incoming(conversation, message)
   end
 
   defp handle_response(response, %{name: robot}) do

@@ -6,9 +6,9 @@ defmodule Clover.Conversation.Supervisor do
     Message
   }
 
-  def start_link(message, scripts) do
+  def start_link(message, robot) do
     name = message |> Message.robot() |> via_tuple
-    DynamicSupervisor.start_child(name, {Conversation, {message, scripts}})
+    DynamicSupervisor.start_child(name, {Conversation, {message, robot}})
   end
 
   def via_tuple(name) do

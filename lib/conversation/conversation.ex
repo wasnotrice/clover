@@ -9,6 +9,7 @@ defmodule Clover.Conversation do
 
   alias Clover.{
     Message,
+    Robot,
     Script
   }
 
@@ -28,33 +29,57 @@ defmodule Clover.Conversation do
     %__MODULE__{}
   end
 
-  def start_link({message, _scripts} = arg, opts \\ []) do
+  @spec start_link({message :: Message.t(), robot :: module}, keyword) :: GenServer.on_start()
+  def start_link({message, _robot} = arg, opts \\ []) do
     name = Keyword.get(opts, :name, via_tuple(message))
     GenServer.start_link(__MODULE__, arg, name: name)
   end
 
-  def init({message, scripts}) do
-    state = %__MODULE__{assigns: %{}, scripts: scripts, transcript: [message]}
+  def init({_message, robot}) do
+    scripts = Robot.scripts(robot)
+    state = %__MODULE__{assigns: %{}, scripts: scripts}
     {:ok, state}
   end
 
-  def start(message, scripts) do
-    ConversationSupervisor.start_link(message, scripts)
+  @spec start(message :: Message.t(), robot :: module) :: GenServer.on_start()
+  def start(message, robot) do
+    ConversationSupervisor.start_link(message, robot)
   end
 
-  def incoming(message) do
-    case Clover.whereis_conversation(message) do
-      nil ->
-        {:error, :invalid_conversation}
-
-      conversation ->
-        GenServer.call(conversation, {:incoming, message})
-    end
+  def incoming(conversation, message) do
+    GenServer.call(conversation, {:incoming, message})
   end
 
-  def handle_call({:incoming, message}, _from, %{scripts: scripts} = state) do
-    response = Script.handle_message(message, %{}, scripts)
+  def scripts(conversation) do
+    GenServer.call(conversation, :scripts)
+  end
+
+  def transcript(conversation) do
+    GenServer.call(conversation, :transcript)
+  end
+
+  def handle_call({:incoming, message}, _from, state) do
+    {response, state} = handle_incoming(message, state)
     {:reply, response, state}
+  end
+
+  def handle_call(:scripts, _from, %{scripts: scripts} = state) do
+    {:reply, scripts, state}
+  end
+
+  def handle_call(:transcript, _from, %{transcript: transcript} = state) do
+    {:reply, transcript, state}
+  end
+
+  def handle_info({:after_init, message}, state) do
+    {_response, state} = handle_incoming(message, state)
+    {:noreply, state}
+  end
+
+  defp handle_incoming(message, state) do
+    response = Script.handle_message(message, %{}, state.scripts)
+    transcript = [response, message | state.transcript]
+    {response, Map.put(state, :transcript, transcript)}
   end
 
   def via_tuple(message) do

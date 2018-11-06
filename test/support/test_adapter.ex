@@ -39,8 +39,7 @@ defmodule Clover.Test.TestAdapter do
       robot: name,
       text: text,
       user: %User{
-        id: "test",
-        name: "test"
+        id: "test"
       }
     })
   end

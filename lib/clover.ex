@@ -8,7 +8,6 @@ defmodule Clover do
   alias Clover.{
     Adapter,
     Conversation,
-    Message,
     Robot
   }
 
