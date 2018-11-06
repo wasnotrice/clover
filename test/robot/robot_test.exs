@@ -99,7 +99,7 @@ defmodule Clover.RobotTest do
     Robot.incoming(name, "testbot hex encode 255", %{})
     assert_receive({:say, "FF"})
     Robot.incoming(name, "testbot hex encode my face", %{})
-    assert_receive({:say, ~s(I can't decode "my face". Is it an integer?)})
+    assert_receive({:say, ~s(I can't encode "my face". Is it an integer?)})
     Robot.incoming(name, "testbot hex decode ff", %{})
     assert_receive({:say, "255"})
     Robot.incoming(name, "testbot hex decode fg", %{})

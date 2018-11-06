@@ -20,7 +20,7 @@ defmodule Clover.Test.Hexadecimal do
       say(message, encoded)
     rescue
       ArgumentError ->
-        say(message, ~s(I can't decode "#{source}". Is it an integer?))
+        say(message, ~s(I can't encode "#{source}". Is it an integer?))
     end
   end
 
