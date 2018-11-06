@@ -19,25 +19,23 @@ defmodule Clover.Robot.MessageWorker do
   end
 
   def run({message, context}) do
-    %{adapter: adapter, name: name, robot: robot} = context
-
     message
-    |> normalize(adapter, context)
-    |> classify(adapter, context)
+    |> normalize(context)
+    |> classify(context)
     |> assign_conversation()
     |> handle_message(context)
     |> handle_response(context)
   end
 
-  defp normalize(message, mod, context) do
-    apply(mod, :normalize, [message, context])
+  defp normalize(message, %{adapter: adapter} = context) do
+    apply(adapter, :normalize, [message, context])
   end
 
-  defp classify(%Message{halted?: true} = message, _, _), do: message
+  defp classify(%Message{halted?: true} = message, _), do: message
 
-  defp classify(message, mod, context) do
-    if function_exported?(mod, :classify, 2) do
-      apply(mod, :classify, [message, context])
+  defp classify(message, %{adapter: adapter} = context) do
+    if function_exported?(adapter, :classify, 2) do
+      apply(adapter, :classify, [message, context])
     else
       message
     end
