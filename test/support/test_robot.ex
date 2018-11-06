@@ -5,7 +5,6 @@ defmodule Clover.Test.TestRobot do
 
   use Clover.Robot
 
-  alias Clover.Message
   alias Clover.Robot.Brain
 
   def init(_arg, data) do
