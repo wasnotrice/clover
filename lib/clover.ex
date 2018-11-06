@@ -5,7 +5,12 @@ defmodule Clover do
 
   use Application
 
-  alias Clover.Message
+  alias Clover.{
+    Adapter,
+    Conversation,
+    Message,
+    Robot
+  }
 
   @registry Clover.Registry
   @robot_supervisor Clover.Robots
@@ -66,25 +71,19 @@ defmodule Clover do
   def registry, do: @registry
 
   def whereis_conversation(message) do
-    robot = Message.robot(message)
-    room = Message.room(message)
-    user = Message.user(message)
-
-    case Registry.lookup(@registry, {robot, :conversation, room, user}) do
-      [{pid, _}] -> pid
-      [] -> nil
-    end
+    whereis(Conversation.via_tuple(message))
   end
 
   def whereis_robot(robot) do
-    case Registry.lookup(@registry, robot) do
-      [{pid, _}] -> pid
-      [] -> nil
-    end
+    whereis(Robot.via_tuple(robot))
   end
 
   def whereis_robot_adapter(robot) do
-    case Registry.lookup(@registry, {robot, :adapter}) do
+    whereis(Adapter.via_tuple(robot))
+  end
+
+  defp whereis({:via, _, {_, key}}) do
+    case Registry.lookup(@registry, key) do
       [{pid, _}] -> pid
       [] -> nil
     end
