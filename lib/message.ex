@@ -3,7 +3,6 @@ defmodule Clover.Message do
   A Clover message
   """
   alias Clover.{
-    Conversation,
     User
   }
 
@@ -13,7 +12,6 @@ defmodule Clover.Message do
   @type mention_format :: nil | Regex.t() | [Regex.t()]
 
   defstruct action: nil,
-            conversation: nil,
             delay: nil,
             halted?: false,
             me: nil,
@@ -27,7 +25,6 @@ defmodule Clover.Message do
 
   @type t :: %__MODULE__{
           action: action | nil,
-          conversation: Conversation.t() | nil,
           delay: non_neg_integer | nil,
           halted?: boolean,
           me: User.t() | nil,

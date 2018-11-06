@@ -22,7 +22,6 @@ defmodule Clover.Robot.MessageWorker do
     message
     |> normalize(context)
     |> classify(context)
-    |> assign_conversation()
     |> handle_message(context)
     |> handle_response(context)
   end
@@ -41,20 +40,21 @@ defmodule Clover.Robot.MessageWorker do
     end
   end
 
-  defp assign_conversation(message) do
-    Message.put_conversation(message, Clover.whereis_conversation(message))
-  end
-
-  defp handle_message(%Message{conversation: nil} = message, %{robot: robot} = context) do
-    {:ok, conversation} = Conversation.start(message, robot)
-
+  defp handle_message(%Message{} = message, context) do
     message
-    |> Message.put_conversation(conversation)
-    |> handle_message(context)
+    |> find_or_start_conversation(context)
+    |> Conversation.incoming(message)
   end
 
-  defp handle_message(%Message{conversation: conversation} = message, _context) do
-    Conversation.incoming(conversation, message)
+  defp find_or_start_conversation(message, %{robot: robot}) do
+    case Clover.whereis_conversation(message) do
+      nil ->
+        {:ok, conversation} = Conversation.start(message, robot)
+        conversation
+
+      conversation ->
+        conversation
+    end
   end
 
   defp handle_response(response, %{name: robot}) do
