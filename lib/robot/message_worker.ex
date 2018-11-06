@@ -19,15 +19,14 @@ defmodule Clover.Robot.MessageWorker do
   end
 
   def run({message, context}) do
-    %{adapter: adapter, connection: connection, name: name, robot: robot} = context
-    scripts = Robot.scripts(robot)
+    %{adapter: adapter, name: name, robot: robot} = context
 
     message
     |> normalize(adapter, context)
     |> classify(adapter, context)
     |> assign_conversation()
-    |> handle_message(scripts)
-    |> handle_response(name)
+    |> handle_message(context)
+    |> handle_response(context)
   end
 
   defp normalize(message, mod, context) do
@@ -48,19 +47,21 @@ defmodule Clover.Robot.MessageWorker do
     Message.put_conversation(message, Clover.whereis_conversation(message))
   end
 
-  defp handle_message(%Message{conversation: nil} = message, scripts) do
-    {:ok, conversation} = Conversation.start(message)
+  defp handle_message(%Message{conversation: nil} = message, %{robot: robot} = context) do
+    scripts = Robot.scripts(robot)
+
+    {:ok, conversation} = Conversation.start(message, scripts)
 
     message
     |> Message.put_conversation(conversation)
-    |> handle_message(scripts)
+    |> handle_message(context)
   end
 
-  defp handle_message(%Message{} = message, scripts) do
-    Conversation.incoming(message, scripts)
+  defp handle_message(%Message{} = message, _context) do
+    Conversation.incoming(message)
   end
 
-  defp handle_response(response, robot) do
+  defp handle_response(response, %{name: robot}) do
     log(:debug, "handle_response/2", inspect: response)
 
     case response do

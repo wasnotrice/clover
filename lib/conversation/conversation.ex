@@ -15,10 +15,12 @@ defmodule Clover.Conversation do
   alias Clover.Conversation.Supervisor, as: ConversationSupervisor
 
   defstruct assigns: %{},
+            scripts: [],
             transcript: []
 
   @type t :: %__MODULE__{
           assigns: map,
+          scripts: [Script.t()],
           transcript: [Message.t()]
         }
 
@@ -26,31 +28,31 @@ defmodule Clover.Conversation do
     %__MODULE__{}
   end
 
-  def start_link(message, opts \\ []) do
+  def start_link({message, _scripts} = arg, opts \\ []) do
     name = Keyword.get(opts, :name, via_tuple(message))
-    GenServer.start_link(__MODULE__, message, name: name)
+    GenServer.start_link(__MODULE__, arg, name: name)
   end
 
-  def init(message) do
-    state = %__MODULE__{assigns: %{}, transcript: [message]}
+  def init({message, scripts}) do
+    state = %__MODULE__{assigns: %{}, scripts: scripts, transcript: [message]}
     {:ok, state}
   end
 
-  def start(message) do
-    ConversationSupervisor.start_link(message)
+  def start(message, scripts) do
+    ConversationSupervisor.start_link(message, scripts)
   end
 
-  def incoming(message, scripts) do
+  def incoming(message) do
     case Clover.whereis_conversation(message) do
       nil ->
         {:error, :invalid_conversation}
 
       conversation ->
-        GenServer.call(conversation, {:incoming, message, scripts})
+        GenServer.call(conversation, {:incoming, message})
     end
   end
 
-  def handle_call({:incoming, message, scripts}, _from, state) do
+  def handle_call({:incoming, message}, _from, %{scripts: scripts} = state) do
     response = Script.handle_message(message, %{}, scripts)
     {:reply, response, state}
   end
