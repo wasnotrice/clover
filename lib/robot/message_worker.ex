@@ -18,14 +18,30 @@ defmodule Clover.Robot.MessageWorker do
     Task.start_link(__MODULE__, :run, [arg])
   end
 
-  def run({message, %{robot: robot}}) do
+  def run({message, context}) do
+    %{adapter: adapter, connection: connection, name: name, robot: robot} = context
     scripts = Robot.scripts(robot)
-    robot = Message.robot(message)
 
     message
+    |> normalize(adapter, context)
+    |> classify(adapter, context)
     |> assign_conversation()
     |> handle_message(scripts)
-    |> handle_response(robot)
+    |> handle_response(name)
+  end
+
+  defp normalize(message, mod, context) do
+    apply(mod, :normalize, [message, context])
+  end
+
+  defp classify(%Message{halted?: true} = message, _, _), do: message
+
+  defp classify(message, mod, context) do
+    if function_exported?(mod, :classify, 2) do
+      apply(mod, :classify, [message, context])
+    else
+      message
+    end
   end
 
   defp assign_conversation(message) do

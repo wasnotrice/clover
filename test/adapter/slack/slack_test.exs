@@ -36,7 +36,7 @@ defmodule Clover.Adapter.SlackTest do
       user: "U8U8U8U8U"
     }
 
-    state = %{robot: "alice", me: @me, connection: @slack_state}
+    state = %{name: "alice", me: @me, connection: @slack_state}
 
     message = Slack.normalize(slack_message, state)
 

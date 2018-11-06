@@ -219,38 +219,20 @@ defmodule Clover.Robot do
     log(:info, "terminate", inspect: reason)
   end
 
-  defp normalize(%Message{halted?: true} = message, _, _), do: message
-
-  defp normalize(message, mod, context) do
-    apply(mod, :normalize, [message, context])
-  end
-
-  defp classify(%Message{halted?: true} = message, _, _), do: message
-
-  defp classify(message, mod, context) do
-    if function_exported?(mod, :classify, 2) do
-      apply(mod, :classify, [message, context])
-    else
-      message
-    end
-  end
-
   @doc false
-  def handle_event(
-        :cast,
-        {:incoming, raw_message},
-        _state,
-        %{name: name, mod: mod, adapter: adapter} = data
-      ) do
+  def handle_event(:cast, {:incoming, raw_message}, _state, data) do
     log(:debug, "message", inspect: raw_message)
+    %{name: name, me: me, mod: mod, adapter: adapter, connection: connection} = data
 
-    message =
-      raw_message
-      |> normalize(adapter, data)
-      |> classify(adapter, data)
+    worker_state = %{
+      adapter: adapter,
+      connection: connection,
+      me: me,
+      name: name,
+      robot: mod
+    }
 
-    {:ok, _worker} =
-      MessageSupervisor.dispatch(name, message, %{robot: mod, adapter: data.adapter})
+    {:ok, _worker} = MessageSupervisor.dispatch(name, raw_message, worker_state)
 
     :keep_state_and_data
   end

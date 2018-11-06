@@ -13,10 +13,7 @@ defmodule Clover.Robot.MessageSupervisor do
   @spec dispatch(name :: String.t(), message :: any, %{robot: module, adapter: module}) ::
           DynamicSupervisor.on_start_child()
   def dispatch(name, message, context) do
-    DynamicSupervisor.start_child(
-      via_tuple(name),
-      {MessageWorker, {message, context}}
-    )
+    DynamicSupervisor.start_child(via_tuple(name), {MessageWorker, {message, context}})
   end
 
   def via_tuple(name) do
